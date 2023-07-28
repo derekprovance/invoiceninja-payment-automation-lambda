@@ -2,7 +2,7 @@ export class ParsedSubject {
   private VALID_CHECK_REGEX =
     /(\b[A-Za-z]+\b\s\b[A-Za-z]+\b)\spaid\syou\s(\$[0-9]+\.[0-9]+)/;
   private NAME_REGEX = /(\b[A-Za-z]+\b\s\b[A-Za-z]+\b)/;
-  private MONEY_REGEX = /([0-9]+\.[0-9]+)/;
+  private MONEY_REGEX = /([0-9]+(\.[0-9]+)?)/;
 
   private name: string | undefined;
   private amount: number | undefined;
