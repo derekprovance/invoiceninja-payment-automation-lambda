@@ -1,0 +1,18 @@
+{
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "typescript": "^5.1.6"
+  },
+  "name": "invoiceninja-automation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.4.0"
+  },
+  "scripts": {
+    "build": "tsc && mv node_modules node_bak && npm install --omit=dev && mv node_modules dist/ && mv node_bak node_modules"
+  }
+}
