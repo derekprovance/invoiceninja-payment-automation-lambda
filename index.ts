@@ -21,12 +21,29 @@ export const handler = async (event: any) => {
     process.env.token as string
   );
 
-  const client = await invoiceService.getClient(payment.getName() as string);
+  const client = await invoiceService.getClients(payment.getName() as string);
+
+  if (!client || client.length === 0 || client.length > 1) {
+    console.log("Invalid clients found: ", client.length);
+    return;
+  }
+
   const invoices = await invoiceService.listInvoices(
     payment.getAmount() as number,
-    client.id
+    client[0].id
   );
 
-  //TODO - make a final call to save the invoice as paid
-  return null;
+  if (!invoices || invoices.length === 0 || invoices.length > 1) {
+    console.log("Invalid invoices found: ", invoices.length);
+    return;
+  }
+
+  const makePayment = await invoiceService.createPayment(
+    invoices[0].id,
+    payment.getAmount() as number,
+    client[0].id,
+    subject
+  );
+
+  return makePayment;
 };
