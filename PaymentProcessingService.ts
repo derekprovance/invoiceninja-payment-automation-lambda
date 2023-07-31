@@ -4,18 +4,16 @@ import { Payment } from './Payment'
 
 export class PaymentProcessingService {
   private invoiceNinjaService: InvoiceNinjaService
-  private payment: Payment
 
-  constructor(invoiceNinjaService: InvoiceNinjaService, payment: Payment) {
+  constructor(invoiceNinjaService: InvoiceNinjaService) {
     this.invoiceNinjaService = invoiceNinjaService
-    this.payment = payment
   }
 
   public async processPayment(name: string, amount: number) {
-    const client = await this.getClient(this.payment.getName());
-    const invoice = await this.getInvoice(client.id, this.payment.getAmount());
+    const client = await this.getClient(name);
+    const invoice = await this.getInvoice(client.id, amount);
 
-    return await this.createPayment(invoice.id, client.id, this.payment.getAmount());
+    return await this.createPayment(invoice.id, client.id, amount);
   }
 
   private async createPayment(invoiceId: string, clientId: string, amount: number) {

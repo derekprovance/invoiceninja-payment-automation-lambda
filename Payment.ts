@@ -21,7 +21,7 @@ export class Payment {
   }
 
   public isValid(): boolean {
-    return this.name && this.amount ? true : false
+    return (this.name && this.amount) ? true : false
   }
 
   private parseName(subject: string): string {
@@ -34,7 +34,7 @@ export class Payment {
       return parseFloat(reg)
     }
 
-    throw new Error('Unable to process amount');
+    throw new Error(`Unable to process monitary amount ${subject}`);
   }
 
   private parse(subject: string, regex: RegExp): string {

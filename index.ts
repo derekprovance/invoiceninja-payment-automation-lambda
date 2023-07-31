@@ -6,15 +6,15 @@ import { PaymentProcessingService } from './PaymentProcessingService'
 
 export const handler = async (event: any) => {
   if (!isValidEvent(event)) {
-    logger.debug('NOTICE: Invalid event detected')
-    return
+    logger.error('NOTICE: Invalid event detected')
+    throw new Error(`Invalid event sent to lambda`);
   }
 
   const fromAddr = getFromAddr(event);
   const subject = getEmailSubject(event);
 
   if (fromAddr !== 'venmo@venmo.com') {
-    logger.debug('NOTICE: Not a venmo email')
+    logger.debug('NOTICE: Not a venmo email. Nothing to process.')
     return
   }
 
@@ -30,7 +30,6 @@ export const handler = async (event: any) => {
   )
   const paymentProcessingService = new PaymentProcessingService(
     invoiceService,
-    payment,
   )
 
   const paymentResult = paymentProcessingService.processPayment(
