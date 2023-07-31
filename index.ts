@@ -1,5 +1,5 @@
 'use strict'
-import { InvoiceService } from './InvoiceNinjaService'
+import { InvoiceNinjaService } from './InvoiceNinjaService'
 import { logger } from './Logger'
 import { Payment } from './Payment'
 import { PaymentProcessingService } from './PaymentProcessingService'
@@ -24,7 +24,7 @@ export const handler = async (event: any) => {
     return
   }
 
-  const invoiceService = new InvoiceService(
+  const invoiceService = new InvoiceNinjaService(
     process.env.baseURL as string,
     process.env.token as string,
   )
