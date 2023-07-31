@@ -1,21 +1,21 @@
-import axios from "axios";
+import axios from 'axios'
+import { logger } from './Logger'
 
-export class InvoiceService {
-  private PAYMENT_GATEWAY_ID = "25";
+export class InvoiceNinjaService {
+  private PAYMENT_GATEWAY_ID = '25'
 
-  private baseURL: string;
-  private token: string;
+  private baseURL: string
+  private token: string
 
   constructor(baseURL: string, token: string) {
-    this.baseURL = baseURL;
-    this.token = token;
+    this.baseURL = baseURL
+    this.token = token
   }
 
   public async createPayment(
     invoiceId: string,
     amount: number,
     clientId: string,
-    notes: string,
   ) {
     try {
       const response = await axios.post(
@@ -31,20 +31,20 @@ export class InvoiceService {
               amount: amount,
             },
           ],
-          private_notes: notes,
+          transaction_reference: 'Lambda',
         },
         {
           headers: {
-            "X-API-TOKEN": `${this.token}`,
-            "X-Requested-With": "XMLHttpRequest",
+            'X-API-TOKEN': `${this.token}`,
+            'X-Requested-With': 'XMLHttpRequest',
           },
-        }
-      );
+        },
+      )
 
-      return response.data;
+      return response.data
     } catch (error) {
-      console.error(`Error creating payment: ${error}`);
-      throw error;
+      logger.error(`Error creating payment: ${error}`)
+      throw error
     }
   }
 
@@ -52,41 +52,40 @@ export class InvoiceService {
     try {
       const response = await axios.get(`${this.baseURL}/api/v1/clients`, {
         headers: {
-          "X-API-TOKEN": `${this.token}`,
-          "X-Requested-With": "XMLHttpRequest",
+          'X-API-TOKEN': `${this.token}`,
+          'X-Requested-With': 'XMLHttpRequest',
         },
         params: {
           includes: name,
         },
-      });
+      })
 
-      return response.data.data;
+      return response.data.data
     } catch (error) {
-      console.error(`Error fetching invoices: ${error}`);
-      throw error;
+      logger.error(`Error fetching invoices: ${error}`)
+      throw error
     }
   }
 
-  public async listInvoices(amount: number, clientID: number) {
-    console.log("clientId", clientID);
+  public async listInvoices(amount: number, clientId: string) {
     try {
       const response = await axios.get(`${this.baseURL}/api/v1/invoices`, {
         headers: {
-          "X-API-TOKEN": `${this.token}`,
-          "X-Requested-With": "XMLHttpRequest",
+          'X-API-TOKEN': `${this.token}`,
+          'X-Requested-With': 'XMLHttpRequest',
         },
         params: {
           is_deleted: false,
           filter: amount,
-          client_status: "unpaid",
-          client_id: clientID,
+          client_status: 'unpaid',
+          client_id: clientId,
         },
-      });
+      })
 
-      return response.data.data;
+      return response.data.data
     } catch (error) {
-      console.error(`Error fetching invoices: ${error}`);
-      throw error;
+      logger.error(`Error fetching invoices: ${error}`)
+      throw error
     }
   }
 }

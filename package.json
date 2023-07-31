@@ -1,22 +1,25 @@
 {
-  "devDependencies": {
-    "@types/aws-lambda": "^8.10.119",
-    "@types/node": "^20.4.5",
-    "typescript": "^5.1.6"
-  },
-  "name": "invoiceninja-automation",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "invoiceninja-automation-venmo",
+  "version": "1.1.0",
+  "main": "dist/index.js",
   "author": "",
   "license": "ISC",
   "description": "",
-  "dependencies": {
-    "axios": "^1.4.0"
-  },
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "esbuild index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
     "postbuild": "cd dist && zip -r index.zip index.js*",
     "compile": "yarn prebuild && yarn build && yarn postbuild"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "pino": "^8.14.2",
+    "prettier": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^20.4.5",
+    "@types/pino": "^7.0.5",
+    "typescript": "^5.1.6"
   }
 }

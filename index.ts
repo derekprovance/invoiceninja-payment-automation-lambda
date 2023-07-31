@@ -1,49 +1,59 @@
-"use strict";
-import { InvoiceService } from "./InvoiceService";
-import { ParsedSubject } from "./ParsedSubject";
+'use strict'
+import { InvoiceService } from './InvoiceNinjaService'
+import { logger } from './Logger'
+import { Payment } from './Payment'
+import { PaymentProcessingService } from './PaymentProcessingService'
 
 export const handler = async (event: any) => {
-  const fromAddr = event.Records[0].ses.mail.source;
-  if (fromAddr !== "venmo@venmo.com") {
-    console.log("Not a venmo email");
-    return;
+  if (!isValidEvent(event)) {
+    logger.debug('NOTICE: Invalid event detected')
+    return
   }
-  const subject = event.Records[0].ses.mail.commonHeaders.subject;
 
-  const payment = new ParsedSubject(subject);
-  if (!payment.getValid() || payment.getAmount() === undefined) {
-    console.log("Not a valid payment notification");
-    return;
+  const fromAddr = getFromAddr(event);
+  const subject = getEmailSubject(event);
+
+  if (fromAddr !== 'venmo@venmo.com') {
+    logger.debug('NOTICE: Not a venmo email')
+    return
+  }
+
+  const payment = new Payment(subject)
+  if (!payment.isValid()) {
+    logger.info('NOTICE: Not a valid payment notification', subject)
+    return
   }
 
   const invoiceService = new InvoiceService(
     process.env.baseURL as string,
-    process.env.token as string
-  );
+    process.env.token as string,
+  )
+  const paymentProcessingService = new PaymentProcessingService(
+    invoiceService,
+    payment,
+  )
 
-  const client = await invoiceService.getClients(payment.getName() as string);
+  const paymentResult = paymentProcessingService.processPayment(
+    payment.getName(),
+    payment.getAmount(),
+  )
 
-  if (!client || client.length === 0 || client.length > 1) {
-    console.log("Invalid clients found: ", client.length);
-    return;
-  }
+  return paymentResult
+}
 
-  const invoices = await invoiceService.listInvoices(
-    payment.getAmount() as number,
-    client[0].id
-  );
+export const getFromAddr = (event: any): string => {
+  return event.Records[0].ses.mail.source;
+}
 
-  if (!invoices || invoices.length === 0 || invoices.length > 1) {
-    console.log("Invalid invoices found: ", invoices.length);
-    return;
-  }
+export const getEmailSubject = (event: any): string => {
+  return event.Records[0].ses.mail.commonHeaders.subject
+}
 
-  const makePayment = await invoiceService.createPayment(
-    invoices[0].id,
-    payment.getAmount() as number,
-    client[0].id,
-    subject
-  );
-
-  return makePayment;
-};
+export const isValidEvent = (event: any): boolean => {
+  return (
+    event?.Records &&
+    event.Records.length > 0 &&
+    event.Records[0].ses?.mail?.source &&
+    event.Records[0].ses?.mail?.commonHeaders?.subject
+  )
+}
