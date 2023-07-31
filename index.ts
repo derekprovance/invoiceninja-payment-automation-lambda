@@ -3,7 +3,18 @@ import { InvoiceNinjaService } from './InvoiceNinjaService'
 import { logger } from './Logger'
 import { Payment } from './Payment'
 import { PaymentProcessingService } from './PaymentProcessingService'
+import { config } from './config'
 
+/**
+ * Lambda that takes adds a payment to invoice ninja based on a name and amount.
+ * 
+ * FUTURE TODO: It might be worth considering making this event a generic name and amount instead. By doing so
+ * we'll allow for much simpler lambdas that are in charge of parsing various inputs from payment processors
+ * all routed through this lambda
+ * 
+ * @param event SES event from forwarded e-mail
+ * @returns 
+ */
 export const handler = async (event: any) => {
   if (!isValidEvent(event)) {
     logger.error('NOTICE: Invalid event detected')
@@ -25,8 +36,8 @@ export const handler = async (event: any) => {
   }
 
   const invoiceService = new InvoiceNinjaService(
-    process.env.baseURL as string,
-    process.env.token as string,
+    config.baseUrl as string,
+    config.token as string,
   )
   const paymentProcessingService = new PaymentProcessingService(
     invoiceService,

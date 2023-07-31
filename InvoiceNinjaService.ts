@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { logger } from './Logger'
+import { config } from './config'
 
 export class InvoiceNinjaService {
-  private PAYMENT_GATEWAY_ID = '25'
+  private PAYMENT_GATEWAY_ID = config.paymentGatewayId
 
   private baseURL: string
   private token: string

@@ -1,6 +1,7 @@
 import pino from 'pino'
+import { config } from './config'
 
 export const logger = pino({
-  name: 'venmo',
-  level: process.env.LOG_LEVEL || 'info',
+  name: config.paymentProcessor,
+  level: config.logLevel,
 })

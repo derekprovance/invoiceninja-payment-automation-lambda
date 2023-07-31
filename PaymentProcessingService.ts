@@ -1,6 +1,5 @@
 import { InvoiceNinjaService } from './InvoiceNinjaService'
 import { logger } from './Logger'
-import { Payment } from './Payment'
 
 export class PaymentProcessingService {
   private invoiceNinjaService: InvoiceNinjaService
