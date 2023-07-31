@@ -32,7 +32,7 @@ export class PaymentProcessingService {
 
     if (!this.validateInvoice(invoices)) {
       logger.debug('NOTICE: Invalid amount of invoices found: ', invoices.length)
-      return
+      throw new Error('Unable to process invoices due to invalid return results')
     }
 
     return invoices[0];
@@ -45,7 +45,7 @@ export class PaymentProcessingService {
 
     if (!this.validClient(clients)) {
       logger.debug('NOTICE: Invalid amount of clients found: ', clients.length)
-      return
+      throw new Error('Unable to process clients due to invalid return results')
     }
 
     return clients[0];

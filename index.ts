@@ -32,10 +32,15 @@ export const handler = async (event: any) => {
     invoiceService,
   )
 
-  const paymentResult = paymentProcessingService.processPayment(
-    payment.getName(),
-    payment.getAmount(),
-  )
+  let paymentResult;
+  try {
+    paymentResult = paymentProcessingService.processPayment(
+      payment.getName(),
+      payment.getAmount(),
+    )
+  } catch (ex) {
+    logger.error(ex);
+  }
 
   return paymentResult
 }
