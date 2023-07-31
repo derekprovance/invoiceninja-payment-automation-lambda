@@ -1,10 +1,8 @@
 import axios from 'axios'
-import { logger } from './Logger'
-import { config } from './config'
+import { logger } from '../Logger'
+import { config } from '../../config'
 
-export class InvoiceNinjaService {
-  private PAYMENT_GATEWAY_ID = config.paymentGatewayId
-
+export class InvoiceNinjaRepository {
   private baseURL: string
   private token: string
 
@@ -25,7 +23,7 @@ export class InvoiceNinjaService {
           client_id: clientId,
           amount: amount,
           is_manual: false,
-          type_id: this.PAYMENT_GATEWAY_ID,
+          type_id: config.venmoPaymentGatewayId,
           invoices: [
             {
               invoice_id: invoiceId,

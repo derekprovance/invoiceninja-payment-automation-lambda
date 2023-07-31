@@ -1,11 +1,11 @@
-import { InvoiceNinjaService } from './InvoiceNinjaService'
-import { logger } from './Logger'
+import { InvoiceNinjaRepository } from '../Repository/InvoiceNinjaRepository'
+import { logger } from '../Logger'
 
 export class PaymentProcessingService {
-  private invoiceNinjaService: InvoiceNinjaService
+  private invoiceNinjaRepository: InvoiceNinjaRepository
 
-  constructor(invoiceNinjaService: InvoiceNinjaService) {
-    this.invoiceNinjaService = invoiceNinjaService
+  constructor(invoiceNinjaRepository: InvoiceNinjaRepository) {
+    this.invoiceNinjaRepository = invoiceNinjaRepository
   }
 
   public async processPayment(name: string, amount: number) {
@@ -16,7 +16,7 @@ export class PaymentProcessingService {
   }
 
   private async createPayment(invoiceId: string, clientId: string, amount: number) {
-    return await this.invoiceNinjaService.createPayment(
+    return await this.invoiceNinjaRepository.createPayment(
       invoiceId,
       amount,
       clientId,
@@ -24,7 +24,7 @@ export class PaymentProcessingService {
   }
 
   private async getInvoice(clientId: string, amount: number): Promise<any> {
-    const invoices = await this.invoiceNinjaService.listInvoices(
+    const invoices = await this.invoiceNinjaRepository.listInvoices(
       amount,
       clientId,
     )
@@ -38,7 +38,7 @@ export class PaymentProcessingService {
   }
 
   private async getClient(clientName: string): Promise<any> {
-    const clients = await this.invoiceNinjaService.getClients(
+    const clients = await this.invoiceNinjaRepository.getClients(
       clientName,
     )
 

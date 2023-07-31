@@ -10,8 +10,7 @@
  */
 export const config = {
     baseUrl: process.env.BASE_URL,
-    paymentGatewayId: process.env.PAYMENT_GATEWAY_ID,
-    paymentProcessor: process.env.PAYMENT_PROCESSOR,
+    venmoPaymentGatewayId: process.env.VENMO_PAYMENT_GATEWAY_ID,
     token: process.env.TOKEN,
     logLevel: process.env.LOG_LEVEL ?? 'info',
 }

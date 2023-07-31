@@ -1,8 +1,8 @@
 'use strict'
-import { InvoiceNinjaService } from './InvoiceNinjaService'
-import { logger } from './Logger'
-import { Payment } from './Payment'
-import { PaymentProcessingService } from './PaymentProcessingService'
+import { InvoiceNinjaRepository } from './src/Repository/InvoiceNinjaRepository'
+import { logger } from './src/Logger'
+import { Payment } from './src/Payment'
+import { PaymentProcessingService } from './src/Service/PaymentProcessingService'
 import { config } from './config'
 
 /**
@@ -35,17 +35,20 @@ export const handler = async (event: any) => {
     return
   }
 
-  const invoiceService = new InvoiceNinjaService(
-    config.baseUrl as string,
-    config.token as string,
-  )
+  return await processPayment(payment)
+}
+
+export const processPayment = async (payment: Payment): Promise<any> => {
   const paymentProcessingService = new PaymentProcessingService(
-    invoiceService,
+    new InvoiceNinjaRepository(
+      config.baseUrl as string,
+      config.token as string,
+    ),
   )
 
   let paymentResult;
   try {
-    paymentResult = paymentProcessingService.processPayment(
+    paymentResult = await paymentProcessingService.processPayment(
       payment.getName(),
       payment.getAmount(),
     )
@@ -53,7 +56,7 @@ export const handler = async (event: any) => {
     logger.error(ex);
   }
 
-  return paymentResult
+  return paymentResult;
 }
 
 export const getFromAddr = (event: any): string => {
