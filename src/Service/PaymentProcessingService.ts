@@ -19,7 +19,7 @@ export class PaymentProcessingService {
   }
 
   private async createPayment(invoiceId: string, clientId: string, amount: number, paymentTypeId: string) {
-    logger.trace(`Creating a payment ($${amount}) for ${clientId} on invoice ${invoiceId} with type ${paymentTypeId}.`)
+    logger.info(`Creating a payment ($${amount}) for ${clientId} on invoice ${invoiceId} with type ${paymentTypeId}.`)
 
     return await this.invoiceNinjaRepository.createPayment(
       invoiceId,

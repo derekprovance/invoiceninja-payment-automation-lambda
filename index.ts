@@ -29,7 +29,10 @@ export const handler = async (event: any) => {
     return
   }
 
-  return await processPayment(payment)
+  const response = await processPayment(payment)
+  logger.info(`Processing completed for ${payment.getName()}`)
+
+  return response;
 }
 
 
