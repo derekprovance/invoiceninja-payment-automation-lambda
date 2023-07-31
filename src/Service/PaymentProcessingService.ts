@@ -1,5 +1,6 @@
 import { InvoiceNinjaRepository } from '../Repository/InvoiceNinjaRepository'
-import { logger } from '../Logger'
+import { logger } from '../../Logger'
+import { Payment } from '../Payment';
 
 export class PaymentProcessingService {
   private invoiceNinjaRepository: InvoiceNinjaRepository
@@ -8,18 +9,23 @@ export class PaymentProcessingService {
     this.invoiceNinjaRepository = invoiceNinjaRepository
   }
 
-  public async processPayment(name: string, amount: number) {
-    const client = await this.getClient(name);
-    const invoice = await this.getInvoice(client.id, amount);
+  public async processPayment(payment: Payment) {
+    logger.debug(`Processing payment for ${payment.getName()}`);
 
-    return await this.createPayment(invoice.id, client.id, amount);
+    const client = await this.getClient(payment.getName());
+    const invoice = await this.getInvoice(client.id, payment.getAmount());
+
+    return await this.createPayment(invoice.id, client.id, payment.getAmount(), payment.getPaymentId());
   }
 
-  private async createPayment(invoiceId: string, clientId: string, amount: number) {
+  private async createPayment(invoiceId: string, clientId: string, amount: number, paymentTypeId: string) {
+    logger.trace(`Creating ${amount} payment for ${clientId} on invoice ${invoiceId} with type ${paymentTypeId}.`)
+
     return await this.invoiceNinjaRepository.createPayment(
       invoiceId,
       amount,
       clientId,
+      paymentTypeId,
     )
   }
 

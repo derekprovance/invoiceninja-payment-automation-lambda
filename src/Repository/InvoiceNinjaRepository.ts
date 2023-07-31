@@ -1,6 +1,5 @@
 import axios from 'axios'
-import { logger } from '../Logger'
-import { config } from '../../config'
+import { logger } from '../../Logger'
 
 export class InvoiceNinjaRepository {
   private baseURL: string
@@ -15,6 +14,7 @@ export class InvoiceNinjaRepository {
     invoiceId: string,
     amount: number,
     clientId: string,
+    typeId: string,
   ) {
     try {
       const response = await axios.post(
@@ -23,7 +23,7 @@ export class InvoiceNinjaRepository {
           client_id: clientId,
           amount: amount,
           is_manual: false,
-          type_id: config.venmoPaymentGatewayId,
+          type_id: typeId,
           invoices: [
             {
               invoice_id: invoiceId,

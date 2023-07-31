@@ -1,9 +1,10 @@
 'use strict'
 import { InvoiceNinjaRepository } from './src/Repository/InvoiceNinjaRepository'
-import { logger } from './src/Logger'
+import { logger } from './Logger'
 import { Payment } from './src/Payment'
 import { PaymentProcessingService } from './src/Service/PaymentProcessingService'
 import { config } from './config'
+import { EmailEventHandlingService } from './src/Service/EmailEventHandlingService'
 
 /**
  * Lambda that takes adds a payment to invoice ninja based on a name and amount.
@@ -16,27 +17,21 @@ import { config } from './config'
  * @returns 
  */
 export const handler = async (event: any) => {
-  if (!isValidEvent(event)) {
-    logger.error('NOTICE: Invalid event detected')
-    throw new Error(`Invalid event sent to lambda`);
-  }
+  const payment = EmailEventHandlingService.handleEmailEvent(event);
 
-  const fromAddr = getFromAddr(event);
-  const subject = getEmailSubject(event);
-
-  if (fromAddr !== 'venmo@venmo.com') {
-    logger.debug('NOTICE: Not a venmo email. Nothing to process.')
+  if (!payment) {
+    logger.debug('Unhandled Payment for event.')
     return
   }
 
-  const payment = new Payment(subject)
   if (!payment.isValid()) {
-    logger.info('NOTICE: Not a valid payment notification', subject)
+    logger.debug(`Invalid payment: ${JSON.stringify({ payment })}`);
     return
   }
 
   return await processPayment(payment)
 }
+
 
 export const processPayment = async (payment: Payment): Promise<any> => {
   const paymentProcessingService = new PaymentProcessingService(
@@ -48,30 +43,10 @@ export const processPayment = async (payment: Payment): Promise<any> => {
 
   let paymentResult;
   try {
-    paymentResult = await paymentProcessingService.processPayment(
-      payment.getName(),
-      payment.getAmount(),
-    )
+    paymentResult = await paymentProcessingService.processPayment(payment);
   } catch (ex) {
     logger.error(ex);
   }
 
   return paymentResult;
-}
-
-export const getFromAddr = (event: any): string => {
-  return event.Records[0].ses.mail.source;
-}
-
-export const getEmailSubject = (event: any): string => {
-  return event.Records[0].ses.mail.commonHeaders.subject
-}
-
-export const isValidEvent = (event: any): boolean => {
-  return (
-    event?.Records &&
-    event.Records.length > 0 &&
-    event.Records[0].ses?.mail?.source &&
-    event.Records[0].ses?.mail?.commonHeaders?.subject
-  )
 }
