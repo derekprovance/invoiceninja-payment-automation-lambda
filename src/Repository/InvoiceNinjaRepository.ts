@@ -2,12 +2,16 @@ import axios from 'axios'
 import { logger } from '../../Logger'
 
 export class InvoiceNinjaRepository {
-  private baseURL: string
-  private token: string
+  private axiosInstance: any;
 
   constructor(baseURL: string, token: string) {
-    this.baseURL = baseURL
-    this.token = token
+    this.axiosInstance = axios.create({
+      baseURL: `${baseURL}/api/v1`,
+      headers: {
+        'X-API-TOKEN': token,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
   }
 
   public async createPayment(
@@ -15,76 +19,59 @@ export class InvoiceNinjaRepository {
     amount: number,
     clientId: string,
     typeId: string,
-  ) {
+  ): Promise<PaymentResponse> {
     try {
-      const response = await axios.post(
-        `${this.baseURL}/api/v1/payments`,
-        {
-          client_id: clientId,
-          amount: amount,
-          is_manual: false,
-          type_id: typeId,
-          invoices: [
-            {
-              invoice_id: invoiceId,
-              amount: amount,
-            },
-          ],
-          transaction_reference: 'Lambda',
-        },
-        {
-          headers: {
-            'X-API-TOKEN': `${this.token}`,
-            'X-Requested-With': 'XMLHttpRequest',
+      const response = await this.axiosInstance.post('/payments', {
+        client_id: clientId,
+        amount: amount,
+        is_manual: false,
+        type_id: typeId,
+        invoices: [
+          {
+            invoice_id: invoiceId,
+            amount: amount,
           },
-        },
-      )
+        ],
+        transaction_reference: 'Lambda',
+      });
 
-      return response.data
+      return response.data;
     } catch (error) {
-      logger.error(`Error creating payment: ${error}`)
-      throw error
+      logger.error(`Error creating payment: ${error}`);
+      throw error;
     }
   }
 
-  public async getClients(name: string) {
+  public async getClients(name: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseURL}/api/v1/clients`, {
-        headers: {
-          'X-API-TOKEN': `${this.token}`,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+      const response = await this.axiosInstance.get('/clients', {
         params: {
           includes: name,
         },
-      })
+      });
 
-      return response.data.data
+      return response.data.data;
     } catch (error) {
-      logger.error(`Error fetching invoices: ${error}`)
-      throw error
+      logger.error(`Error fetching clients: ${error}`);
+      throw error;
     }
   }
 
-  public async listInvoices(amount: number, clientId: string) {
+  public async listInvoices(amount: number, clientId: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseURL}/api/v1/invoices`, {
-        headers: {
-          'X-API-TOKEN': `${this.token}`,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+      const response = await this.axiosInstance.get('/invoices', {
         params: {
           is_deleted: false,
           filter: amount,
           client_status: 'unpaid',
           client_id: clientId,
         },
-      })
+      });
 
-      return response.data.data
+      return response.data.data;
     } catch (error) {
-      logger.error(`Error fetching invoices: ${error}`)
-      throw error
+      logger.error(`Error fetching invoices: ${error}`);
+      throw error;
     }
   }
 }

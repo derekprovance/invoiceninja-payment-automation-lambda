@@ -8,13 +8,9 @@ import { EmailEventHandlingService } from './src/Service/EmailEventHandlingServi
 
 /**
  * Lambda that takes adds a payment to invoice ninja based on a name and amount.
- * 
- * FUTURE TODO: It might be worth considering making this event a generic name and amount instead. By doing so
- * we'll allow for much simpler lambdas that are in charge of parsing various inputs from payment processors
- * all routed through this lambda
- * 
+ *
  * @param event SES event from forwarded e-mail
- * @returns 
+ * @returns The result of the payment processing
  */
 export const handler = async (event: any) => {
   const payment = EmailEventHandlingService.handleEmailEvent(event);

@@ -35,12 +35,13 @@ export class PaymentProcessingService {
       clientId,
     )
 
-    if (!this.validateInvoice(invoices)) {
-      logger.debug('NOTICE: Invalid amount of invoices found: ', invoices.length)
-      throw new Error('Unable to process invoices due to invalid return results')
+    const result = invoices.find((invoice: any) => invoice.amount === amount);
+
+    if (!result) {
+      throw new Error(`Invoice not found for amount: ${amount}`)
     }
 
-    return invoices[0];
+    return result
   }
 
   private async getClient(clientName: string): Promise<any> {
@@ -49,8 +50,8 @@ export class PaymentProcessingService {
     )
 
     if (!this.validClient(clients)) {
-      logger.debug('NOTICE: Invalid amount of clients found: ', clients.length)
-      throw new Error('Unable to process clients due to invalid return results')
+      logger.debug('NOTICE: Invalid number of clients found. Expected exactly 1, found: ', clients.length);
+      throw new Error('Unable to process clients due to invalid return results');
     }
 
     return clients[0];
@@ -58,9 +59,5 @@ export class PaymentProcessingService {
 
   private validClient = (client: any): boolean => {
     return client && client.length === 1
-  }
-
-  private validateInvoice = (invoice: any): boolean => {
-    return invoice && invoice.length === 1
   }
 }
