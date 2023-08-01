@@ -13,7 +13,13 @@ import { EmailEventHandlingService } from './src/services/EmailEventHandlingServ
  * @returns The result of the payment processing
  */
 export const handler = async (event: any) => {
-  const payment = EmailEventHandlingService.handleEmailEvent(event);
+  let payment
+  try {
+    payment = EmailEventHandlingService.handleEmailEvent(event);
+  } catch (ex) {
+    logger.debug(ex);
+    return
+  }
 
   if (!payment) {
     logger.debug('Unhandled Payment for event.')
