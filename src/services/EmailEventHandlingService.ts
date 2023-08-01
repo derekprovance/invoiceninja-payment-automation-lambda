@@ -1,8 +1,8 @@
-import { Payment } from "../Payment";
-import { PaymentFactory } from "../PaymentFactory";
+import { IPayment } from "../interfaces/IPayment";
+import { PaymentFactory } from "../factories/PaymentFactory";
 
 export class EmailEventHandlingService {
-    public static handleEmailEvent(event: any): Payment | undefined {
+    public static handleEmailEvent(event: any): IPayment | undefined {
         if (!this.isValidEvent(event)) {
             throw new Error('Event not supported for email processing');
         }
@@ -10,8 +10,7 @@ export class EmailEventHandlingService {
         const fromAddr = this.getFromAddr(event);
         const subject = this.getEmailSubject(event);
 
-        const payment = PaymentFactory.createPayment(fromAddr, subject);
-        return payment;
+        return PaymentFactory.createPayment(fromAddr, subject);
     }
 
     private static getFromAddr(event: any): string {

@@ -1,4 +1,4 @@
-import { PaymentProcessor } from "./src/PaymentProcessor";
+import { IPaymentProcessor } from "../interfaces/IPaymentProcessor";
 
 /**
  * Configuration for Invoice Ninja Payment Automation
@@ -15,7 +15,7 @@ export const config = {
         venmo: {
             gatewayId: process.env.VENMO_PAYMENT_GATEWAY_ID ?? '25',
             email: process.env.VENMO_EMAIL ?? 'venmo@venmo.com',
-        } as PaymentProcessor,
+        } as IPaymentProcessor,
     },
     token: process.env.TOKEN,
     logLevel: process.env.LOG_LEVEL ?? 'info',

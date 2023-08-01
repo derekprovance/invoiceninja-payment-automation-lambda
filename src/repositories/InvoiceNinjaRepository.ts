@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { logger } from '../../Logger'
+import { logger } from '../utils/Logger'
 
 export class InvoiceNinjaRepository {
   private axiosInstance: any;

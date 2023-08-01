@@ -1,4 +1,4 @@
-export interface PaymentProcessor {
+export interface IPaymentProcessor {
     gatewayId: string,
     email: string
 }

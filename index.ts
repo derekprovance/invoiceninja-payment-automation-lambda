@@ -1,10 +1,10 @@
 'use strict'
-import { InvoiceNinjaRepository } from './src/Repository/InvoiceNinjaRepository'
-import { logger } from './Logger'
-import { Payment } from './src/Payment'
-import { PaymentProcessingService } from './src/Service/PaymentProcessingService'
-import { config } from './config'
-import { EmailEventHandlingService } from './src/Service/EmailEventHandlingService'
+import { InvoiceNinjaRepository } from './src/repositories/InvoiceNinjaRepository'
+import { logger } from './src/utils/Logger'
+import { IPayment } from './src/interfaces/IPayment'
+import { PaymentProcessingService } from './src/services/PaymentProcessingService'
+import { config } from './src/utils/config'
+import { EmailEventHandlingService } from './src/services/EmailEventHandlingService'
 
 /**
  * Lambda that takes adds a payment to invoice ninja based on a name and amount.
@@ -20,11 +20,6 @@ export const handler = async (event: any) => {
     return
   }
 
-  if (!payment.isValid()) {
-    logger.debug(`Invalid payment: ${JSON.stringify({ payment })}`);
-    return
-  }
-
   const response = await processPayment(payment)
   logger.info(`Processing completed for ${payment.getName()}`)
 
@@ -32,7 +27,7 @@ export const handler = async (event: any) => {
 }
 
 
-export const processPayment = async (payment: Payment): Promise<any> => {
+export const processPayment = async (payment: IPayment): Promise<any> => {
   const paymentProcessingService = new PaymentProcessingService(
     new InvoiceNinjaRepository(
       config.baseUrl as string,
@@ -45,6 +40,9 @@ export const processPayment = async (payment: Payment): Promise<any> => {
     paymentResult = await paymentProcessingService.processPayment(payment);
   } catch (ex) {
     logger.error(ex);
+    paymentResult = {
+      error: ex,
+    }
   }
 
   return paymentResult;

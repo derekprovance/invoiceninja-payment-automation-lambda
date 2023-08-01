@@ -1,6 +1,6 @@
-import { InvoiceNinjaRepository } from '../Repository/InvoiceNinjaRepository'
-import { logger } from '../../Logger'
-import { Payment } from '../Payment';
+import { InvoiceNinjaRepository } from '../repositories/InvoiceNinjaRepository'
+import { logger } from '../utils/Logger'
+import { IPayment } from '../interfaces/IPayment';
 
 export class PaymentProcessingService {
   private invoiceNinjaRepository: InvoiceNinjaRepository
@@ -9,7 +9,7 @@ export class PaymentProcessingService {
     this.invoiceNinjaRepository = invoiceNinjaRepository
   }
 
-  public async processPayment(payment: Payment) {
+  public async processPayment(payment: IPayment) {
     logger.debug(`Processing payment for ${payment.getName()}`);
 
     const client = await this.getClient(payment.getName());

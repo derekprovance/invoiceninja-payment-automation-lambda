@@ -1,8 +1,8 @@
-import { config } from "../config";
-import { logger } from "../Logger";
-import { Payment } from "./Payment";
+import { config } from "./utils/config";
+import { logger } from "./utils/Logger";
+import { IPayment } from "./interfaces/IPayment";
 
-export class VenmoPayment implements Payment {
+export class VenmoPayment implements IPayment {
     private static readonly NAME_REGEX = /([A-Za-z]+\s[A-Za-z]+) paid you/;
     private static readonly MONEY_REGEX = /\$([0-9]+(\.[0-9]{1,2})?)/;
 
