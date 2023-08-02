@@ -21,7 +21,7 @@ export class InvoiceNinjaRepository {
     typeId: string,
   ): Promise<any> {
     try {
-      const mappedInvoices = invoices.map(({ amount, invoice_id }) => ({ amount, invoice_id }));
+      const mappedInvoices = invoices.map(({ amount, id }) => ({ amount, invoice_id: id }));
 
       const response = await this.axiosInstance.post('/payments', {
         client_id: clientId,
