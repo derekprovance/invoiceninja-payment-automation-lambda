@@ -19,7 +19,7 @@ export class InvoiceNinjaRepository {
     amount: number,
     clientId: string,
     typeId: string,
-  ): Promise<PaymentResponse> {
+  ): Promise<any> {
     try {
       const mappedInvoices = invoices.map(({ amount, invoice_id }) => ({ amount, invoice_id }));
 

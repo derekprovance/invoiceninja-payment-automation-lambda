@@ -14,13 +14,7 @@ import { InvalidEventError } from './src/utils/errors/InvalidEventError'
  * @returns The result of the payment processing
  */
 export const handler = async (event: any) => {
-  let payment
-  try {
-    payment = EmailEventHandlingService.handleEmailEvent(event);
-  } catch (ex) {
-    logger.trace({ ex, event });
-    throw ex;
-  }
+  const payment = EmailEventHandlingService.handleEmailEvent(event);
 
   if (!payment) {
     logger.debug('Unhandled Payment for event.')
@@ -28,7 +22,7 @@ export const handler = async (event: any) => {
   }
 
   const response = await processPayment(payment)
-  logger.info(`Processing completed for ${payment.getName()}`)
+  logger.debug(`Processing completed for ${payment.getName()}`)
 
   return response;
 }
@@ -42,15 +36,5 @@ export const processPayment = async (payment: IPayment): Promise<any> => {
     ),
   )
 
-  let paymentResult;
-  try {
-    paymentResult = await paymentProcessingService.processPayment(payment);
-  } catch (ex) {
-    logger.error(ex);
-    paymentResult = {
-      error: ex,
-    }
-  }
-
-  return paymentResult;
+  return await paymentProcessingService.processPayment(payment);
 }
