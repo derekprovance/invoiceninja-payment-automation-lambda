@@ -15,14 +15,14 @@ export class PaymentProcessingService {
 
     const client = await this.getClient(payment.getName());
 
-    if(!client) {
+    if (!client) {
       logger.info(`No client was found for payment ${payment.getName()}`);
       return;
     }
 
     const invoices = await this.getInvoicesByAmount(client.id, payment.getAmount());
 
-    if(!invoices) {
+    if (!invoices) {
       logger.info(`No invoice was found for client ${payment.getName()} with an amount of ${payment.getAmount()}`);
       return;
     }
@@ -31,7 +31,7 @@ export class PaymentProcessingService {
   }
 
   private async createPayment(invoices: any[], clientId: string, amount: number, paymentTypeId: string) {
-    logger.info(`Creating a payment ($${amount}) for ${clientId} on invoices ${JSON.stringify(invoices)} with type ${paymentTypeId}.`)
+    logger.info(`Creating a payment ($${amount}) for ${clientId} on invoices ${invoices.map(invoice => invoice.id)} with type ${paymentTypeId}.`)
 
     return await this.invoiceNinjaRepository.createPayment(
       invoices,
@@ -43,7 +43,6 @@ export class PaymentProcessingService {
 
   private async getInvoicesByAmount(clientId: string, amount: number): Promise<any[] | null> {
     const invoices = await this.invoiceNinjaRepository.listInvoices(
-      amount,
       clientId,
     )
 

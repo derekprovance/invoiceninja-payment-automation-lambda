@@ -6,6 +6,7 @@ import { PaymentProcessingService } from './src/services/PaymentProcessingServic
 import { config } from './src/utils/config'
 import { EmailEventHandlingService } from './src/services/EmailEventHandlingService'
 import { InvalidEventError } from './src/utils/errors/InvalidEventError'
+import { PaymentPayload } from './src/dtos/PaymentPayload'
 
 /**
  * Lambda that takes adds a payment to invoice ninja based on a name and amount.

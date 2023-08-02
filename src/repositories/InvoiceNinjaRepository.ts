@@ -54,12 +54,11 @@ export class InvoiceNinjaRepository {
     }
   }
 
-  public async listInvoices(amount: number, clientId: string): Promise<any> {
+  public async listInvoices(clientId: string): Promise<any> {
     try {
       const response = await this.axiosInstance.get('/invoices', {
         params: {
           is_deleted: false,
-          filter: amount,
           client_status: 'unpaid',
           client_id: clientId,
         },

@@ -1,7 +1,7 @@
 import { logger } from "../utils/Logger";
 import { config } from "../utils/config";
 import { IPayment } from "../interfaces/IPayment";
-import { VenmoPayment } from "../VenmoPayment";
+import { VenmoPayment } from "../services/payments/VenmoPayment";
 import { InvalidPayment } from "../utils/errors/InvalidPayment";
 
 export class PaymentFactory {

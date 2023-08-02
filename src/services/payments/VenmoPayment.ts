@@ -1,8 +1,8 @@
-import { config } from "./utils/config";
-import { logger } from "./utils/Logger";
-import { IPayment } from "./interfaces/IPayment";
-import { ParserError } from "./utils/errors/ParserError";
-import { InvalidPayment } from "./utils/errors/InvalidPayment";
+import { config } from "../../utils/config";
+import { logger } from "../../utils/Logger";
+import { IPayment } from "../../interfaces/IPayment";
+import { ParserError } from "../../utils/errors/ParserError";
+import { InvalidPayment } from "../../utils/errors/InvalidPayment";
 
 export class VenmoPayment implements IPayment {
     private static readonly NAME_REGEX = /([A-Za-z]+\s[A-Za-z]+) paid you/;
