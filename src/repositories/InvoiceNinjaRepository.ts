@@ -43,7 +43,7 @@ export class InvoiceNinjaRepository {
     try {
       const response = await this.axiosInstance.get('/clients', {
         params: {
-          includes: name,
+          name,
         },
       });
 
