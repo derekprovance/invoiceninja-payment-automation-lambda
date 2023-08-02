@@ -1,10 +1,11 @@
 import { IPayment } from "../interfaces/IPayment";
 import { PaymentFactory } from "../factories/PaymentFactory";
+import { InvalidEventError } from "../utils/errors/InvalidEventError";
 
 export class EmailEventHandlingService {
     public static handleEmailEvent(event: any): IPayment | undefined {
         if (!this.isValidEvent(event)) {
-            throw new Error('Event not supported for email processing');
+            throw new InvalidEventError('Event is not an SES event');
         }
 
         const fromAddr = this.getFromAddr(event);

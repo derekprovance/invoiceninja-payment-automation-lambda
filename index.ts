@@ -5,6 +5,7 @@ import { IPayment } from './src/interfaces/IPayment'
 import { PaymentProcessingService } from './src/services/PaymentProcessingService'
 import { config } from './src/utils/config'
 import { EmailEventHandlingService } from './src/services/EmailEventHandlingService'
+import { InvalidEventError } from './src/utils/errors/InvalidEventError'
 
 /**
  * Lambda that takes adds a payment to invoice ninja based on a name and amount.
@@ -18,7 +19,7 @@ export const handler = async (event: any) => {
     payment = EmailEventHandlingService.handleEmailEvent(event);
   } catch (ex) {
     logger.debug(ex);
-    return
+    throw ex;
   }
 
   if (!payment) {

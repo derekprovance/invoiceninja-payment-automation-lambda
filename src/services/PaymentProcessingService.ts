@@ -1,6 +1,9 @@
 import { InvoiceNinjaRepository } from '../repositories/InvoiceNinjaRepository'
 import { logger } from '../utils/Logger'
 import { IPayment } from '../interfaces/IPayment';
+import { InvoiceNotFoundError } from '../utils/errors/InvoiceNotFoundError';
+import { ClientNotFoundError } from '../utils/errors/ClientNotFoundError';
+import { UnhandledScenarioError } from '../utils/errors/UnhandledScenarioError';
 
 export class PaymentProcessingService {
   private invoiceNinjaRepository: InvoiceNinjaRepository
@@ -38,7 +41,7 @@ export class PaymentProcessingService {
     const result = invoices.find((invoice: any) => invoice.amount === amount);
 
     if (!result) {
-      throw new Error(`Invoice not found for amount: ${amount}`)
+      throw new InvoiceNotFoundError(`Invoice not found for amount: ${amount}`)
     }
 
     return result
@@ -49,15 +52,18 @@ export class PaymentProcessingService {
       clientName,
     )
 
-    if (!this.validClient(clients)) {
-      logger.debug('NOTICE: Invalid number of clients found. Expected exactly 1, found: ', clients.length);
-      throw new Error('Unable to process clients due to invalid return results');
+    if (!this.hasClient(clients)) {
+      throw new ClientNotFoundError('Unable to process clients due to invalid return results');
+    }
+
+    if (clients.length > 1) {
+      throw new UnhandledScenarioError('More than one client was found.')
     }
 
     return clients[0];
   }
 
-  private validClient = (client: any): boolean => {
+  private hasClient = (client: any): boolean => {
     return client && client.length === 1
   }
 }

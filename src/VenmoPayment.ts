@@ -1,6 +1,8 @@
 import { config } from "./utils/config";
 import { logger } from "./utils/Logger";
 import { IPayment } from "./interfaces/IPayment";
+import { ParserError } from "./utils/errors/ParserError";
+import { InvalidPayment } from "./utils/errors/InvalidPayment";
 
 export class VenmoPayment implements IPayment {
     private static readonly NAME_REGEX = /([A-Za-z]+\s[A-Za-z]+) paid you/;
@@ -15,7 +17,7 @@ export class VenmoPayment implements IPayment {
 
         if (!this.isValid()) {
             logger.error(`Invalid payment. Name: ${this.name}, Amount: ${this.amount}`);
-            throw new Error("Invalid Venmo payment");
+            throw new InvalidPayment("Invalid Venmo payment");
         }
     }
 
@@ -51,7 +53,7 @@ export class VenmoPayment implements IPayment {
             return reg;
         } else {
             logger.error(`Error parsing ${subject} with ${regex}`);
-            throw new Error(`Error parsing ${subject} with ${regex}`);
+            throw new ParserError(`Error parsing ${subject} with ${regex}`);
         }
     }
 }
