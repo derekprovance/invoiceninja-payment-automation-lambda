@@ -18,7 +18,7 @@ export const handler = async (event: any) => {
   try {
     payment = EmailEventHandlingService.handleEmailEvent(event);
   } catch (ex) {
-    logger.debug(ex);
+    logger.trace({ ex, event });
     throw ex;
   }
 
