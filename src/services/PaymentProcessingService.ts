@@ -16,35 +16,38 @@ export class PaymentProcessingService {
     logger.debug(`Processing payment for ${payment.getName()}`);
 
     const client = await this.getClient(payment.getName());
-    const invoice = await this.getInvoice(client.id, payment.getAmount());
+    const invoices = await this.getInvoicesByAmount(client.id, payment.getAmount());
 
-    return await this.createPayment(invoice.id, client.id, payment.getAmount(), payment.getPaymentId());
+    return await this.createPayment(invoices, client.id, payment.getAmount(), payment.getPaymentId());
   }
 
-  private async createPayment(invoiceId: string, clientId: string, amount: number, paymentTypeId: string) {
-    logger.info(`Creating a payment ($${amount}) for ${clientId} on invoice ${invoiceId} with type ${paymentTypeId}.`)
+  private async createPayment(invoices: any[], clientId: string, amount: number, paymentTypeId: string) {
+    logger.info(`Creating a payment ($${amount}) for ${clientId} on invoices ${JSON.stringify(invoices)} with type ${paymentTypeId}.`)
 
     return await this.invoiceNinjaRepository.createPayment(
-      invoiceId,
+      invoices,
       amount,
       clientId,
       paymentTypeId,
     )
   }
 
-  private async getInvoice(clientId: string, amount: number): Promise<any> {
+  private async getInvoicesByAmount(clientId: string, amount: number): Promise<any[]> {
     const invoices = await this.invoiceNinjaRepository.listInvoices(
       amount,
       clientId,
     )
 
-    const result = invoices.find((invoice: any) => invoice.amount === amount);
-
-    if (!result) {
-      throw new InvoiceNotFoundError(`Invoice not found for amount: ${amount}`)
+    let result = this.findSingleInvoice(invoices, amount);
+    if(result) {
+      return [result];
     }
 
-    return result
+    if (this.isInvoiceTotal(invoices, amount)) {
+      return invoices;
+    } else {
+      throw new InvoiceNotFoundError('Unable to find invoice with total');
+    }
   }
 
   private async getClient(clientName: string): Promise<any> {
@@ -65,5 +68,18 @@ export class PaymentProcessingService {
 
   private hasClient = (client: any): boolean => {
     return client && client.length === 1
+  }
+
+  private findSingleInvoice(invoices: [any], amount: number): any | null {
+    const invoice = invoices.find((invoice: any) => invoice.amount === amount);
+    return invoice || null;
+  }
+
+  private isInvoiceTotal(invoices: [any], amount: number): boolean {
+    const total = invoices.reduce((acc, invoice) => {
+      return acc + invoice.amount
+    }, 0);
+
+    return total === amount;
   }
 }

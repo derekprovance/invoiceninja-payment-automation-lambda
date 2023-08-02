@@ -15,23 +15,20 @@ export class InvoiceNinjaRepository {
   }
 
   public async createPayment(
-    invoiceId: string,
+    invoices: any[],
     amount: number,
     clientId: string,
     typeId: string,
   ): Promise<PaymentResponse> {
     try {
+      const mappedInvoices = invoices.map(({ amount, invoice_id }) => ({ amount, invoice_id }));
+
       const response = await this.axiosInstance.post('/payments', {
         client_id: clientId,
         amount: amount,
         is_manual: false,
         type_id: typeId,
-        invoices: [
-          {
-            invoice_id: invoiceId,
-            amount: amount,
-          },
-        ],
+        invoices: mappedInvoices,
         transaction_reference: 'Lambda',
       });
 
