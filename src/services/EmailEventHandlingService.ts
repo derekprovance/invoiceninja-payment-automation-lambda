@@ -15,7 +15,7 @@ export class EmailEventHandlingService {
     }
 
     private static getFromAddr(event: any): string {
-        return event.Records[0].ses.mail.source;
+        return event.Records[0].ses.mail.commonHeaders.from[0];
     }
 
     private static getEmailSubject(event: any): string {
