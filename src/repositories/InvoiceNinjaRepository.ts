@@ -50,10 +50,24 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
 
   public async getClients(name: string): Promise<InvoiceNinjaClient[]> {
     return this.request(async () => {
+      // First try to get clients by name filter
       const response = await this.axiosInstance.get('/clients', {
         params: { name },
       })
-      return response.data.data as InvoiceNinjaClient[]
+      const clientsByName = (response.data.data as InvoiceNinjaClient[]).filter(
+        (c) => !c.is_deleted,
+      )
+
+      // If we found clients by name, return them
+      if (clientsByName.length > 0) {
+        return clientsByName
+      }
+
+      // If no results by name, fetch all clients to allow contact name matching
+      const allClientsResponse = await this.axiosInstance.get('/clients')
+      return (allClientsResponse.data.data as InvoiceNinjaClient[]).filter(
+        (c) => !c.is_deleted,
+      )
     }, 'Error fetching clients')
   }
 

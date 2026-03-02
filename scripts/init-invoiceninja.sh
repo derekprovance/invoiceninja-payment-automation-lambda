@@ -8,11 +8,11 @@ ENV_OUT="$(dirname "$0")/../docker/integration.env"
 
 echo "Waiting for Invoice Ninja to be ready at $BASE_URL..."
 
-MAX_WAIT=120
+MAX_WAIT=300
 INTERVAL=3
 elapsed=0
 
-until curl -sf "$BASE_URL/api/v1/ping" | grep -q '"it_works"'; do
+until curl -sf "$BASE_URL" > /dev/null; do
   if [ "$elapsed" -ge "$MAX_WAIT" ]; then
     echo "ERROR: Invoice Ninja did not become ready within ${MAX_WAIT}s" >&2
     exit 1

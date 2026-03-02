@@ -6,6 +6,7 @@ export interface InvoiceNinjaContact {
 export interface InvoiceNinjaClient {
   id: string
   name: string
+  is_deleted?: boolean
   contacts: InvoiceNinjaContact[]
 }
 

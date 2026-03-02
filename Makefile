@@ -24,7 +24,8 @@ integration\:start: integration\:key
 integration\:run:
 	npm run test:integration
 
-integration\:test: integration\:start
+integration\:test:
+	$(MAKE) 'integration:start'
 	$(MAKE) 'integration:run'; status=$$?; $(MAKE) 'integration:stop'; exit $$status
 
 integration\:stop:

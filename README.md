@@ -15,7 +15,7 @@ This project is compatible with both self-hosted and cloud-hosted Invoice Ninja 
 - AWS Lambda
 - AWS Simple Email Service (SES)
 - Node.js (latest version)
-- Yarn package manager
+- npm package manager
 - Invoice Ninja account (either self-hosted or cloud-hosted)
 
 ## Dependencies
@@ -37,7 +37,7 @@ cd invoiceninja-payment-automation-lambda
 Install required packages:
 
 ```bash
-yarn install
+npm install
 ```
 
 ### Configuration
@@ -69,10 +69,90 @@ Set up the environment variables for your Lambda function. Below is a table deta
 Compile the TypeScript code:
 
 ```bash
-yarn compile
+npm run compile
 ```
 
 This will output the compiled JavaScript files into a deployable zip under the `dist` folder
+
+## Integration Testing
+
+This project includes end-to-end integration tests that run against a live InvoiceNinja instance in Docker. The tests verify payment processing scenarios including client matching, invoice allocation, and partial payment handling.
+
+### Prerequisites for Integration Testing
+
+- Docker and Docker Compose
+- Node.js and npm
+
+### Running Integration Tests
+
+#### Quick Start (Recommended)
+
+Run all tests with automatic cleanup:
+
+```bash
+make integration:test
+```
+
+This target will:
+1. Generate an APP_KEY for the test environment
+2. Start Docker services (MariaDB, Redis, InvoiceNinja, nginx)
+3. Initialize InvoiceNinja with test credentials
+4. Run all integration tests
+5. Stop and clean up Docker services
+
+#### Manual Steps
+
+If you prefer to manage the environment manually:
+
+```bash
+# Generate APP_KEY for integration environment
+make integration:key
+
+# Start Docker services
+docker compose --env-file .env.integration up -d
+
+# Initialize InvoiceNinja (polls for readiness, logs in, generates docker/integration.env)
+bash scripts/init-invoiceninja.sh
+
+# Run tests
+npm run test:integration
+
+# Stop services when done
+docker compose down
+```
+
+### Integration Test Coverage
+
+The integration tests verify 5 scenarios:
+
+| Test | Expected Result |
+|------|-----------------|
+| Exact client name match | Successfully marks invoice as paid |
+| Contact name match | Finds client by contact first+last name |
+| Multi-invoice allocation | Distributes payment across multiple unpaid invoices |
+| No matching client | Returns `no_client` status |
+| Client with no invoices | Returns `no_invoice` status |
+
+Each test creates its own test data and cleans up automatically after execution.
+
+### Troubleshooting Integration Tests
+
+**InvoiceNinja won't start**: The `make integration:key` target may have failed to generate an APP_KEY. Check that `.env.integration` exists and contains `IN_APP_KEY=base64:...`
+
+**Tests fail with "More than one client found" or "ECONNREFUSED" errors**: This typically indicates stale Docker volumes from a previous failed run. Clean up with:
+```bash
+make integration:clean
+```
+This removes the Docker volumes (`db_data`, `invoiceninja_public`, `invoiceninja_storage`) and network. On the next `make integration:test` run, fresh volumes will be created and InvoiceNinja will initialize properly.
+
+**"Cannot connect to InvoiceNinja" errors**: The initialization script polls the API for up to 300 seconds to allow InvoiceNinja time for database migrations and initial setup. Ensure Docker services are fully started by checking:
+```bash
+docker compose ps
+```
+If InvoiceNinja still doesn't respond after 5 minutes, check the container logs:
+```bash
+docker compose logs invoiceninja
+```
 
 ## Contributing
 
