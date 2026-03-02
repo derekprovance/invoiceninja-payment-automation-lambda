@@ -1,4 +1,4 @@
 export interface IPaymentProcessor {
-    gatewayId: string,
-    email: string
+  gatewayId: string
+  email: string
 }

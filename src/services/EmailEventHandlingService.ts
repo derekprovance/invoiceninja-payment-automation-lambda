@@ -1,33 +1,33 @@
-import { IPayment } from "../interfaces/IPayment";
-import { PaymentFactory } from "../factories/PaymentFactory";
-import { InvalidEventError } from "../utils/errors/InvalidEventError";
+import { SESEvent } from 'aws-lambda'
+import { IPayment } from '../interfaces/IPayment'
+import { createPayment } from '../factories/PaymentFactory'
+import { InvalidEventError } from '../utils/errors/InvalidEventError'
 
-export class EmailEventHandlingService {
-    public static handleEmailEvent(event: any): IPayment | undefined {
-        if (!this.isValidEvent(event)) {
-            throw new InvalidEventError('Event is not an SES event');
-        }
+export function handleEmailEvent(event: SESEvent): IPayment {
+  if (!isValidEvent(event)) {
+    throw new InvalidEventError('Event is not an SES event')
+  }
 
-        const fromAddr = this.getFromAddr(event);
-        const subject = this.getEmailSubject(event);
+  const fromAddr = getFromAddr(event)
+  const subject = getEmailSubject(event)
 
-        return PaymentFactory.createPayment(fromAddr, subject);
-    }
+  return createPayment(fromAddr, subject)
+}
 
-    private static getFromAddr(event: any): string {
-        return event.Records[0].ses.mail.commonHeaders.from[0];
-    }
+function getFromAddr(event: SESEvent): string {
+  return event.Records[0].ses.mail.commonHeaders.from![0]
+}
 
-    private static getEmailSubject(event: any): string {
-        return event.Records[0].ses.mail.commonHeaders.subject
-    }
+function getEmailSubject(event: SESEvent): string {
+  return event.Records[0].ses.mail.commonHeaders.subject!
+}
 
-    private static isValidEvent(event: any): boolean {
-        return (
-            event?.Records &&
-            event.Records.length > 0 &&
-            event.Records[0].ses?.mail?.source &&
-            event.Records[0].ses?.mail?.commonHeaders?.subject
-        )
-    }
+function isValidEvent(event: SESEvent): boolean {
+  return (
+    event?.Records &&
+    event.Records.length > 0 &&
+    Boolean(event.Records[0].ses?.mail?.source) &&
+    Boolean(event.Records[0].ses?.mail?.commonHeaders?.from?.length) &&
+    Boolean(event.Records[0].ses?.mail?.commonHeaders?.subject)
+  )
 }

@@ -1,5 +1,3 @@
-export class InvalidEventError extends Error {
-    constructor(message: string) {
-        super(message);
-    }
-}
+import { AppError } from './AppError'
+
+export class InvalidEventError extends AppError {}
