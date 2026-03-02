@@ -14,9 +14,14 @@ export interface InvoiceNinjaInvoice {
   amount: number
 }
 
+export interface InvoiceAllocation {
+  invoice_id: string
+  amount: number
+}
+
 export interface IInvoiceRepository {
   createPayment(
-    invoices: InvoiceNinjaInvoice[],
+    allocations: InvoiceAllocation[],
     amount: number,
     clientId: string,
     typeId: string,

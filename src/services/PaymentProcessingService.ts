@@ -3,10 +3,13 @@ import { IPayment } from '../interfaces/IPayment'
 import { UnhandledScenarioError } from '../utils/errors/UnhandledScenarioError'
 import {
   IInvoiceRepository,
+  InvoiceAllocation,
   InvoiceNinjaClient,
   InvoiceNinjaInvoice,
 } from '../interfaces/IInvoiceRepository'
 import { PaymentResult } from '../types/PaymentResult'
+
+const CURRENCY_EPSILON = 0.001
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ')
@@ -29,20 +32,17 @@ export class PaymentProcessingService {
       return { status: 'no_client' }
     }
 
-    const invoices = await this.getInvoicesByAmount(
-      client.id,
-      payment.getAmount(),
-    )
+    const invoices = await this.invoiceNinjaRepository.listInvoices(client.id)
 
-    if (!invoices) {
-      logger.info(
-        `No invoice was found for client ${payment.getName()} with an amount of ${payment.getAmount()}`,
-      )
+    if (invoices.length === 0) {
+      logger.info(`No invoices found for client ${payment.getName()}`)
       return { status: 'no_invoice' }
     }
 
+    const allocations = this.allocatePayment(invoices, payment.getAmount())
+
     const data = await this.createPayment(
-      invoices,
+      allocations,
       client.id,
       payment.getAmount(),
       payment.getPaymentId(),
@@ -50,39 +50,45 @@ export class PaymentProcessingService {
     return { status: 'success', data }
   }
 
-  private async createPayment(
+  private allocatePayment(
     invoices: InvoiceNinjaInvoice[],
+    paymentAmount: number,
+  ): InvoiceAllocation[] {
+    const sorted = [...invoices].sort((a, b) => a.amount - b.amount)
+    const allocations: InvoiceAllocation[] = []
+    let remaining = paymentAmount
+
+    for (const invoice of sorted) {
+      if (remaining <= 0) break
+      const applied = Math.min(invoice.amount, remaining)
+      allocations.push({ invoice_id: invoice.id, amount: applied })
+      remaining -= applied
+    }
+
+    if (remaining > CURRENCY_EPSILON) {
+      logger.info(
+        `Payment amount $${paymentAmount} exceeds invoice total by $${remaining.toFixed(2)}; surplus will create a credit.`,
+      )
+    }
+
+    return allocations
+  }
+
+  private async createPayment(
+    allocations: InvoiceAllocation[],
     clientId: string,
     amount: number,
     paymentTypeId: string,
   ): Promise<unknown> {
     logger.info(
-      `Creating a payment ($${amount}) for ${clientId} on invoices ${invoices.map((invoice) => invoice.id)} with type ${paymentTypeId}.`,
+      `Creating a payment ($${amount}) for ${clientId} on invoices ${allocations.map((a) => a.invoice_id)} with type ${paymentTypeId}.`,
     )
     return await this.invoiceNinjaRepository.createPayment(
-      invoices,
+      allocations,
       amount,
       clientId,
       paymentTypeId,
     )
-  }
-
-  private async getInvoicesByAmount(
-    clientId: string,
-    amount: number,
-  ): Promise<InvoiceNinjaInvoice[] | null> {
-    const invoices = await this.invoiceNinjaRepository.listInvoices(clientId)
-
-    const result = this.findSingleInvoice(invoices, amount)
-    if (result) {
-      return [result]
-    }
-
-    if (this.isInvoiceTotal(invoices, amount)) {
-      return invoices
-    }
-
-    return null
   }
 
   private async getClient(
@@ -98,43 +104,29 @@ export class PaymentProcessingService {
       (c) => normalizeName(c.name) === normalizedSearch,
     )
     if (nameMatches.length === 1) return nameMatches[0]
-
-    // Pass 2: exact match on contacts[0] first_name + last_name
-    const contactMatches = clients.filter((c) => {
-      const contact = c.contacts?.[0]
-      if (!contact) return false
-      return (
-        normalizeName(`${contact.first_name} ${contact.last_name}`) ===
-        normalizedSearch
+    if (nameMatches.length > 1) {
+      throw new UnhandledScenarioError(
+        `More than one client was found with the name ${clientName}`,
       )
-    })
-    if (contactMatches.length === 1) return contactMatches[0]
+    }
 
-    // Ambiguous — more than one exact match in either pass
-    if (nameMatches.length > 1 || contactMatches.length > 1) {
+    // Pass 2: exact match on any contact's first_name + last_name.
+    // Invoice Ninja stores contacts in priority order, but we check all of them
+    // to avoid missing a match when the primary contact is not the payer.
+    const contactMatches = clients.filter((c) =>
+      c.contacts?.some(
+        (contact) =>
+          normalizeName(`${contact.first_name} ${contact.last_name}`) ===
+          normalizedSearch,
+      ),
+    )
+    if (contactMatches.length === 1) return contactMatches[0]
+    if (contactMatches.length > 1) {
       throw new UnhandledScenarioError(
         `More than one client was found with the name ${clientName}`,
       )
     }
 
     return null
-  }
-
-  private findSingleInvoice(
-    invoices: InvoiceNinjaInvoice[],
-    amount: number,
-  ): InvoiceNinjaInvoice | null {
-    const invoice = invoices.find(
-      (invoice) => Math.abs(invoice.amount - amount) < 0.001,
-    )
-    return invoice ?? null
-  }
-
-  private isInvoiceTotal(
-    invoices: InvoiceNinjaInvoice[],
-    amount: number,
-  ): boolean {
-    const total = invoices.reduce((acc, invoice) => acc + invoice.amount, 0)
-    return Math.abs(total - amount) < 0.001
   }
 }

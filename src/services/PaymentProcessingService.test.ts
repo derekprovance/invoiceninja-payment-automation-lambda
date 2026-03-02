@@ -39,12 +39,12 @@ describe('PaymentProcessingService', () => {
     expect(result).toEqual({ status: 'no_client' })
   })
 
-  it('returns no_invoice when no matching invoice found', async () => {
+  it('returns no_invoice when invoice list is empty', async () => {
     const repo = makeRepo({
       getClients: vi
         .fn()
         .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
-      listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 99 }]),
+      listInvoices: vi.fn().mockResolvedValue([]),
     })
     const svc = new PaymentProcessingService(repo)
     const result = await svc.processPayment(makePayment('Alice Bob', 50))
@@ -164,6 +164,86 @@ describe('PaymentProcessingService', () => {
       const svc = new PaymentProcessingService(repo)
       const result = await svc.processPayment(makePayment('John Smith', 50))
       expect(result).toEqual({ status: 'no_client' })
+    })
+  })
+
+  describe('allocatePayment', () => {
+    it('Scenario 1: no invoices → no_invoice', async () => {
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
+        listInvoices: vi.fn().mockResolvedValue([]),
+      })
+      const svc = new PaymentProcessingService(repo)
+      const result = await svc.processPayment(makePayment('Alice Bob', 20))
+      expect(result).toEqual({ status: 'no_invoice' })
+    })
+
+    it('Scenario 2: $20 payment, $30 invoice → partial payment applied', async () => {
+      const createPayment = vi.fn().mockResolvedValue({ id: 'pay-1' })
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
+        listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 30 }]),
+        createPayment,
+      })
+      const svc = new PaymentProcessingService(repo)
+      const result = await svc.processPayment(makePayment('Alice Bob', 20))
+      expect(result.status).toBe('success')
+      expect(createPayment).toHaveBeenCalledWith(
+        [{ invoice_id: 'inv-1', amount: 20 }],
+        20,
+        'c1',
+        'gateway-25',
+      )
+    })
+
+    it('Scenario 3: $20 payment, $10 + $30 invoices → $10 paid in full, $10 partial on $30', async () => {
+      const createPayment = vi.fn().mockResolvedValue({ id: 'pay-1' })
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
+        listInvoices: vi.fn().mockResolvedValue([
+          { id: 'inv-2', amount: 30 },
+          { id: 'inv-1', amount: 10 },
+        ]),
+        createPayment,
+      })
+      const svc = new PaymentProcessingService(repo)
+      const result = await svc.processPayment(makePayment('Alice Bob', 20))
+      expect(result.status).toBe('success')
+      expect(createPayment).toHaveBeenCalledWith(
+        [
+          { invoice_id: 'inv-1', amount: 10 },
+          { invoice_id: 'inv-2', amount: 10 },
+        ],
+        20,
+        'c1',
+        'gateway-25',
+      )
+    })
+
+    it('Scenario 4: $20 payment, $10 invoice → $10 paid in full, $10 overpayment creates credit', async () => {
+      const createPayment = vi.fn().mockResolvedValue({ id: 'pay-1' })
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
+        listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 10 }]),
+        createPayment,
+      })
+      const svc = new PaymentProcessingService(repo)
+      const result = await svc.processPayment(makePayment('Alice Bob', 20))
+      expect(result.status).toBe('success')
+      expect(createPayment).toHaveBeenCalledWith(
+        [{ invoice_id: 'inv-1', amount: 10 }],
+        20,
+        'c1',
+        'gateway-25',
+      )
     })
   })
 })

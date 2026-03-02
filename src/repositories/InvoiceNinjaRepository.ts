@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios'
 import { logger } from '../utils/Logger'
 import {
   IInvoiceRepository,
+  InvoiceAllocation,
   InvoiceNinjaClient,
   InvoiceNinjaInvoice,
 } from '../interfaces/IInvoiceRepository'
@@ -29,22 +30,18 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
   }
 
   public async createPayment(
-    invoices: InvoiceNinjaInvoice[],
+    allocations: InvoiceAllocation[],
     amount: number,
     clientId: string,
     typeId: string,
   ): Promise<unknown> {
     return this.request(async () => {
-      const mappedInvoices = invoices.map(({ amount, id }) => ({
-        amount,
-        invoice_id: id,
-      }))
       const response = await this.axiosInstance.post('/payments', {
         client_id: clientId,
         amount: amount,
         is_manual: false,
         type_id: typeId,
-        invoices: mappedInvoices,
+        invoices: allocations,
         transaction_reference: 'Lambda',
       })
       return response.data
