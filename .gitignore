@@ -2,3 +2,5 @@ payload.zip
 dist/*
 .DS_Store
 node_modules
+docker/integration.env
+.env.integration
