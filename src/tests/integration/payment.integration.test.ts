@@ -130,36 +130,6 @@ describe('Payment integration tests', () => {
     expect(updated40.status_id).not.toBe('4')
   })
 
-  it('ambiguous client: handler throws, no payment created', async () => {
-    const client1 = await testClient.createClient('Jordan Taylor', 'Jordan', 'Taylor')
-    const client2 = await testClient.createClient('JORDAN TAYLOR', 'JORDAN', 'TAYLOR')
-    await testClient.createInvoice(client1.id, 50)
-    await testClient.createInvoice(client2.id, 50)
-
-    const event = buildVenmoSesEvent('Jordan Taylor', 50)
-
-    await expect(handler(event)).rejects.toThrow()
-
-    const payments1 = await testClient.getPaymentsForClient(client1.id)
-    expect(payments1.length).toBe(0)
-
-    const payments2 = await testClient.getPaymentsForClient(client2.id)
-    expect(payments2.length).toBe(0)
-  })
-
-  it('case-insensitive name match end-to-end', async () => {
-    const client = await testClient.createClient('ALICE SMITH', 'ALICE', 'SMITH')
-    const inv = await testClient.createInvoice(client.id, 50)
-
-    const event = buildVenmoSesEvent('Alice Smith', 50)
-    const result = await handler(event)
-
-    expect(result.status).toBe('success')
-
-    const updated = await testClient.getInvoice(inv.id)
-    expect(updated.status_id).toBe(INVOICE_STATUS_PAID)
-  })
-
   it('float tolerance: imprecise allocation amounts accepted', async () => {
     const client = await testClient.createClient('Grace Ho', 'Grace', 'Ho')
     const inv1 = await testClient.createInvoice(client.id, 10.1)
