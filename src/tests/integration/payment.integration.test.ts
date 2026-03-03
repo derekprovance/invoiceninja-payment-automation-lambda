@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { handler } from '../../../index'
 import { InvoiceNinjaTestClient } from './helpers/invoiceNinjaTestClient'
-import { buildVenmoSesEvent } from './helpers/sesEventFactory'
+import { buildVenmoSesEvent, createMockContext } from './helpers/sesEventFactory'
 import { INVOICE_STATUS_PAID } from '../../../src/interfaces/IInvoiceRepository'
 
 const BASE_URL = process.env.IN_BASE_URL!
@@ -27,7 +27,8 @@ describe('Payment integration tests', () => {
     const inv = await testClient.createInvoice(client.id, 150)
 
     const event = buildVenmoSesEvent('Alice Smith', 150)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -47,7 +48,8 @@ describe('Payment integration tests', () => {
     await testClient.createInvoice(client.id, 75.5)
 
     const event = buildVenmoSesEvent('John Smith', 75.5)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
   })
@@ -58,7 +60,8 @@ describe('Payment integration tests', () => {
     const inv2 = await testClient.createInvoice(client.id, 30)
 
     const event = buildVenmoSesEvent('Bob Jones', 50)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -70,7 +73,8 @@ describe('Payment integration tests', () => {
 
   it('no matching client: returns no_client status', async () => {
     const event = buildVenmoSesEvent('Ghost Person', 50)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('no_client')
   })
@@ -79,7 +83,8 @@ describe('Payment integration tests', () => {
     await testClient.createClient('Carol White', 'Carol', 'White')
 
     const event = buildVenmoSesEvent('Carol White', 50)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('no_invoice')
   })
@@ -89,7 +94,8 @@ describe('Payment integration tests', () => {
     const inv = await testClient.createInvoice(client.id, 30)
 
     const event = buildVenmoSesEvent('Dana Brown', 20)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -106,7 +112,8 @@ describe('Payment integration tests', () => {
     const inv = await testClient.createInvoice(client.id, 10)
 
     const event = buildVenmoSesEvent('Eve Black', 20)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -131,7 +138,8 @@ describe('Payment integration tests', () => {
     const inv40 = await testClient.createInvoice(client.id, 40)
 
     const event = buildVenmoSesEvent('Frank Green', 35)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -151,7 +159,8 @@ describe('Payment integration tests', () => {
     const inv2 = await testClient.createInvoice(client.id, 20.2)
 
     const event = buildVenmoSesEvent('Grace Ho', 30.3)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -173,7 +182,8 @@ describe('Payment integration tests', () => {
     await testClient.recordPayment(client.id, inv50.id, 50)
 
     const event = buildVenmoSesEvent('Henry Wu', 30)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -190,7 +200,8 @@ describe('Payment integration tests', () => {
     const inv755 = await testClient.createInvoice(client.id, 7.55)
 
     const event = buildVenmoSesEvent('Ivy Chen', 7.55)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -214,7 +225,8 @@ describe('Payment integration tests', () => {
     const invSmall = await testClient.createInvoice(client.id, 10) // created second → newest
 
     const event = buildVenmoSesEvent('Jake Kim', 15)
-    const result = await handler(event)
+    const context = createMockContext()
+    const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
@@ -236,6 +248,7 @@ describe('Payment integration tests', () => {
     await testClient.createClient('Sam Taylor', 'Sam', 'Taylor')
 
     const event = buildVenmoSesEvent('Sam Taylor', 50)
-    await expect(handler(event)).rejects.toThrow()
+    const context = createMockContext()
+    await expect(handler(event, context)).rejects.toThrow()
   })
 })

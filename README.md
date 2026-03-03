@@ -105,9 +105,6 @@ This target will:
 If you prefer to manage the environment manually:
 
 ```bash
-# Generate APP_KEY for integration environment
-make integration:key
-
 # Start Docker services
 docker compose --env-file .env.integration up -d
 

@@ -1,4 +1,4 @@
-import { SESEvent } from 'aws-lambda'
+import { SESEvent, Context } from 'aws-lambda'
 
 export function buildVenmoSesEvent(
   payerName: string,
@@ -30,6 +30,7 @@ export function buildVenmoSesEvent(
               to: ['recipient@example.com'],
               messageId: `<${messageId}@venmo.com>`,
               subject,
+              date: new Date().toUTCString(),
             },
           },
           receipt: {
@@ -51,5 +52,22 @@ export function buildVenmoSesEvent(
         },
       },
     ],
+  }
+}
+
+export function createMockContext(): Context {
+  return {
+    awsRequestId: 'test-request-id',
+    logGroupName: '/aws/lambda/test',
+    logStreamName: 'test-stream',
+    functionName: 'test-function',
+    functionVersion: '$LATEST',
+    memoryLimitInMB: '128',
+    invokedFunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:test',
+    callbackWaitsForEmptyEventLoop: false,
+    getRemainingTimeInMillis: () => 30000,
+    done: () => {},
+    fail: () => {},
+    succeed: () => {},
   }
 }

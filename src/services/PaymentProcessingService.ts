@@ -42,7 +42,8 @@ export class PaymentProcessingService {
     const allocations = this.allocatePayment(invoices, payment.getAmount())
 
     logger.info(
-      `Creating a payment ($${payment.getAmount()}) for ${client.id} on invoices ${allocations.map((a) => a.invoice_id)} with type ${payment.getPaymentId()}.`,
+      { clientId: client.id, amount: payment.getAmount(), invoiceIds: allocations.map((a) => a.invoice_id), typeId: payment.getPaymentId() },
+      'Creating payment',
     )
     const data = await this.invoiceNinjaRepository.createPayment(
       allocations,
@@ -55,7 +56,8 @@ export class PaymentProcessingService {
     const surplus = payment.getAmount() - totalAllocated
     if (surplus > CURRENCY_EPSILON) {
       logger.info(
-        `Payment $${payment.getAmount()} exceeds invoices by $${surplus.toFixed(2)}; creating credit for client ${client.id}.`,
+        { clientId: client.id, amount: payment.getAmount(), surplus },
+        'Payment exceeds invoices; creating credit',
       )
       await this.invoiceNinjaRepository.createCredit(client.id, surplus)
     }

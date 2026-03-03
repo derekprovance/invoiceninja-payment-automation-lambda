@@ -26,7 +26,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
     try {
       return await fn()
     } catch (error) {
-      logger.error(`${errorMsg}: ${error}`)
+      logger.error({ err: error }, errorMsg)
       throw error
     }
   }

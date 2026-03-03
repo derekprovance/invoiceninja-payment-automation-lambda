@@ -23,7 +23,7 @@ services:
       retries: 10
 
   invoiceninja:
-    image: invoiceninja/invoiceninja:5
+    image: invoiceninja/invoiceninja:latest
     depends_on:
       db:
         condition: service_healthy
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
     environment:
       APP_URL: http://localhost:8000
-      APP_KEY: ${IN_APP_KEY}
+      APP_KEY: base64:I4rEj0YHHjU8R5UIjdtfF7vN4+XMqO+aOxgq3Ewp32M=
       APP_ENV: local
       REQUIRE_HTTPS: "false"
       DB_HOST: db

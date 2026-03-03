@@ -17,9 +17,7 @@ export class VenmoPayment implements IPayment {
     this.amount = this.parseAmount(originalText)
 
     if (!this.isValid()) {
-      logger.error(
-        `Invalid payment. Name: ${this.name}, Amount: ${this.amount}`,
-      )
+      logger.error({ name: this.name, amount: this.amount }, 'Invalid payment')
       throw new InvalidPaymentError('Invalid Venmo payment')
     }
   }
@@ -53,7 +51,7 @@ export class VenmoPayment implements IPayment {
     if (reg) {
       return reg
     } else {
-      logger.error(`Error parsing ${subject} with ${regex}`)
+      logger.error({ regex: regex.toString() }, 'Error parsing email subject')
       throw new ParserError(`Error parsing ${subject} with ${regex}`)
     }
   }
