@@ -5,6 +5,7 @@ import { buildVenmoSesEvent } from './helpers/sesEventFactory'
 
 const BASE_URL = process.env.IN_BASE_URL!
 const TOKEN = process.env.IN_TOKEN!
+const INVOICE_STATUS_PAID = '4'
 
 describe('Payment integration tests', () => {
   let testClient: InvoiceNinjaTestClient
@@ -19,15 +20,18 @@ describe('Payment integration tests', () => {
 
   it('exact client name match: marks invoice as paid', async () => {
     const client = await testClient.createClient('Alice Smith', 'Alice', 'Smith')
-    await testClient.createInvoice(client.id, 150)
+    const inv = await testClient.createInvoice(client.id, 150)
 
     const event = buildVenmoSesEvent('Alice Smith', 150)
     const result = await handler(event)
 
     expect(result.status).toBe('success')
 
-    const invoices = await testClient.getPaymentsForClient(client.id)
-    expect(invoices.length).toBeGreaterThan(0)
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments.length).toBeGreaterThan(0)
+
+    const updated = await testClient.getInvoice(inv.id)
+    expect(updated.status_id).toBe(INVOICE_STATUS_PAID)
   })
 
   it('contact name match: finds client by contact first+last name', async () => {
@@ -52,8 +56,8 @@ describe('Payment integration tests', () => {
 
     const updated1 = await testClient.getInvoice(inv1.id)
     const updated2 = await testClient.getInvoice(inv2.id)
-    expect(updated1.status_id).toBe('4')
-    expect(updated2.status_id).toBe('4')
+    expect(updated1.status_id).toBe(INVOICE_STATUS_PAID)
+    expect(updated2.status_id).toBe(INVOICE_STATUS_PAID)
   })
 
   it('no matching client: returns no_client status', async () => {
@@ -70,5 +74,128 @@ describe('Payment integration tests', () => {
     const result = await handler(event)
 
     expect(result.status).toBe('no_invoice')
+  })
+
+  it('partial payment: invoice stays open', async () => {
+    const client = await testClient.createClient('Dana Brown', 'Dana', 'Brown')
+    const inv = await testClient.createInvoice(client.id, 30)
+
+    const event = buildVenmoSesEvent('Dana Brown', 20)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated = await testClient.getInvoice(inv.id)
+    expect(updated.status_id).not.toBe(INVOICE_STATUS_PAID)
+
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments).toHaveLength(1)
+    expect(payments[0].amount).toBe(20)
+  })
+
+  it('overpayment: invoice paid with full payment amount recorded', async () => {
+    const client = await testClient.createClient('Eve Black', 'Eve', 'Black')
+    const inv = await testClient.createInvoice(client.id, 10)
+
+    const event = buildVenmoSesEvent('Eve Black', 20)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated = await testClient.getInvoice(inv.id)
+    expect(updated.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments[0].amount).toBe(20)
+  })
+
+  it('three-invoice greedy sort: smallest-first ordering verified', async () => {
+    const client = await testClient.createClient('Frank Green', 'Frank', 'Green')
+    const inv10 = await testClient.createInvoice(client.id, 10)
+    const inv25 = await testClient.createInvoice(client.id, 25)
+    const inv40 = await testClient.createInvoice(client.id, 40)
+
+    const event = buildVenmoSesEvent('Frank Green', 35)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated10 = await testClient.getInvoice(inv10.id)
+    expect(updated10.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const updated25 = await testClient.getInvoice(inv25.id)
+    expect(updated25.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const updated40 = await testClient.getInvoice(inv40.id)
+    expect(updated40.status_id).not.toBe('4')
+  })
+
+  it('ambiguous client: handler throws, no payment created', async () => {
+    const client1 = await testClient.createClient('Jordan Taylor', 'Jordan', 'Taylor')
+    const client2 = await testClient.createClient('JORDAN TAYLOR', 'JORDAN', 'TAYLOR')
+    await testClient.createInvoice(client1.id, 50)
+    await testClient.createInvoice(client2.id, 50)
+
+    const event = buildVenmoSesEvent('Jordan Taylor', 50)
+
+    await expect(handler(event)).rejects.toThrow()
+
+    const payments1 = await testClient.getPaymentsForClient(client1.id)
+    expect(payments1.length).toBe(0)
+
+    const payments2 = await testClient.getPaymentsForClient(client2.id)
+    expect(payments2.length).toBe(0)
+  })
+
+  it('case-insensitive name match end-to-end', async () => {
+    const client = await testClient.createClient('ALICE SMITH', 'ALICE', 'SMITH')
+    const inv = await testClient.createInvoice(client.id, 50)
+
+    const event = buildVenmoSesEvent('Alice Smith', 50)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated = await testClient.getInvoice(inv.id)
+    expect(updated.status_id).toBe(INVOICE_STATUS_PAID)
+  })
+
+  it('float tolerance: imprecise allocation amounts accepted', async () => {
+    const client = await testClient.createClient('Grace Ho', 'Grace', 'Ho')
+    const inv1 = await testClient.createInvoice(client.id, 10.1)
+    const inv2 = await testClient.createInvoice(client.id, 20.2)
+
+    const event = buildVenmoSesEvent('Grace Ho', 30.3)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated1 = await testClient.getInvoice(inv1.id)
+    expect(updated1.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const updated2 = await testClient.getInvoice(inv2.id)
+    expect(updated2.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const credit = await testClient.getClientCredit(client.id)
+    expect(credit).toBe(0)
+  })
+
+  it('paid invoice excluded: only unpaid invoice receives payment', async () => {
+    const client = await testClient.createClient('Henry Wu', 'Henry', 'Wu')
+    const inv50 = await testClient.createInvoice(client.id, 50)
+    const openInv = await testClient.createInvoice(client.id, 30)
+
+    await testClient.recordPayment(client.id, inv50.id, 50)
+
+    const event = buildVenmoSesEvent('Henry Wu', 30)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    const updated = await testClient.getInvoice(openInv.id)
+    expect(updated.status_id).toBe(INVOICE_STATUS_PAID)
+
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments.length).toBe(2)
   })
 })

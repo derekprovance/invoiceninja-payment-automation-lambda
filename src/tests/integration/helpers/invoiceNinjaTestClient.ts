@@ -58,21 +58,38 @@ export class InvoiceNinjaTestClient {
 
     // Invoice Ninja ignores status_id on creation; invoices always start as Draft.
     // Mark as Sent so the invoice appears in `client_status=unpaid` queries.
+    // NOTE: The returned object's status_id reflects Draft status; use getInvoice()
+    // to retrieve the updated status_id after this call completes.
     await this.client.put(`/invoices/${created.id}?mark_sent=true`, {})
 
     return created
   }
 
-  async getPaymentsForClient(clientId: string): Promise<unknown[]> {
+  async getPaymentsForClient(clientId: string): Promise<Array<{ id: string; amount: number }>> {
     const response = await this.client.get('/payments', {
       params: { client_id: clientId },
     })
-    return response.data.data as unknown[]
+    return response.data.data as Array<{ id: string; amount: number }>
   }
 
   async getInvoice(invoiceId: string): Promise<CreatedInvoice> {
     const response = await this.client.get(`/invoices/${invoiceId}`)
     return response.data.data as CreatedInvoice
+  }
+
+  async getClientCredit(clientId: string): Promise<number> {
+    const response = await this.client.get(`/clients/${clientId}`)
+    const client = response.data.data as { credit_balance: number }
+    return client.credit_balance
+  }
+
+  async recordPayment(clientId: string, invoiceId: string, amount: number): Promise<void> {
+    const response = await this.client.post('/payments', {
+      client_id: clientId,
+      amount,
+      invoices: [{ invoice_id: invoiceId, amount }],
+    })
+    this.createdPaymentIds.push(response.data.data.id)
   }
 
   async cleanupAll(): Promise<void> {
@@ -89,7 +106,9 @@ export class InvoiceNinjaTestClient {
     }
 
     if (this.createdPaymentIds.length > 0) {
-      await this.bulkDelete('payments', this.createdPaymentIds).catch((e) => {
+      // Deduplicate IDs to avoid errors if recordPayment IDs are also fetched via getPaymentsForClient
+      const uniquePaymentIds = [...new Set(this.createdPaymentIds)]
+      await this.bulkDelete('payments', uniquePaymentIds).catch((e) => {
         console.warn(`Warning: failed to clean up payments: ${e}`)
       })
       this.createdPaymentIds = []
