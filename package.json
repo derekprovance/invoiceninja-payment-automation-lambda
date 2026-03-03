@@ -15,7 +15,8 @@
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
     "test:integration": "vitest run --project integration",
-    "test:all": "vitest run"
+    "test:all": "vitest run",
+    "test:manual": "npx tsx scripts/test-payment.ts"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.161",
     "@types/node": "^25.3.3",
+    "dotenv": "^16.5.0",
     "esbuild": "^0.27.3",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
