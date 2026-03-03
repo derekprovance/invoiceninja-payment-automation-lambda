@@ -93,7 +93,7 @@ describe('Payment integration tests', () => {
     expect(payments[0].amount).toBe(20)
   })
 
-  it('overpayment: invoice paid with full payment amount recorded', async () => {
+  it('overpayment: invoice paid, full payment recorded, and surplus credited', async () => {
     const client = await testClient.createClient('Eve Black', 'Eve', 'Black')
     const inv = await testClient.createInvoice(client.id, 10)
 
@@ -107,9 +107,12 @@ describe('Payment integration tests', () => {
 
     const payments = await testClient.getPaymentsForClient(client.id)
     expect(payments[0].amount).toBe(20)
+
+    const credit = await testClient.getClientCredit(client.id)
+    expect(credit).toBe(10)
   })
 
-  it('three-invoice greedy sort: smallest-first ordering verified', async () => {
+  it('three-invoice oldest-first: oldest invoices paid first', async () => {
     const client = await testClient.createClient('Frank Green', 'Frank', 'Green')
     const inv10 = await testClient.createInvoice(client.id, 10)
     const inv25 = await testClient.createInvoice(client.id, 25)
@@ -167,5 +170,52 @@ describe('Payment integration tests', () => {
 
     const payments = await testClient.getPaymentsForClient(client.id)
     expect(payments.length).toBe(2)
+  })
+
+  it('exact match: $7.55 payment pays the $7.55 invoice, not the older $10 invoice', async () => {
+    const client = await testClient.createClient('Ivy Chen', 'Ivy', 'Chen')
+    const inv10 = await testClient.createInvoice(client.id, 10)
+    const inv755 = await testClient.createInvoice(client.id, 7.55)
+
+    const event = buildVenmoSesEvent('Ivy Chen', 7.55)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    // $7.55 invoice should be paid (matches exactly via greedy sort)
+    const updated755 = await testClient.getInvoice(inv755.id)
+    expect(updated755.status_id).toBe(INVOICE_STATUS_PAID)
+
+    // $10 invoice should remain unpaid
+    const updated10 = await testClient.getInvoice(inv10.id)
+    expect(updated10.status_id).not.toBe(INVOICE_STATUS_PAID)
+
+    // Payment should be recorded for exactly $7.55
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments).toHaveLength(1)
+    expect(payments[0].amount).toBe(7.55)
+  })
+
+  it('oldest-first: larger but older invoice is paid before smaller newer one', async () => {
+    const client = await testClient.createClient('Jake Kim', 'Jake', 'Kim')
+    const invLarge = await testClient.createInvoice(client.id, 30)  // created first → oldest
+    const invSmall = await testClient.createInvoice(client.id, 10)  // created second → newest
+
+    const event = buildVenmoSesEvent('Jake Kim', 15)
+    const result = await handler(event)
+
+    expect(result.status).toBe('success')
+
+    // $15 applied to the $30 invoice (oldest) — partial payment
+    const updatedLarge = await testClient.getInvoice(invLarge.id)
+    expect(updatedLarge.status_id).not.toBe(INVOICE_STATUS_PAID)
+
+    // $10 invoice untouched (it's newer, and $15 was exhausted on the $30)
+    const updatedSmall = await testClient.getInvoice(invSmall.id)
+    expect(updatedSmall.status_id).not.toBe(INVOICE_STATUS_PAID)
+
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments).toHaveLength(1)
+    expect(payments[0].amount).toBe(15)
   })
 })

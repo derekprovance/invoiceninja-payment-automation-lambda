@@ -113,6 +113,26 @@ export class InvoiceNinjaTestClient {
       })
       this.createdPaymentIds = []
     }
+
+    // Collect all credit IDs created against tracked clients
+    const creditIds: string[] = []
+    for (const clientId of this.createdClientIds) {
+      try {
+        const response = await this.client.get('/credits', {
+          params: { client_id: clientId },
+        })
+        const credits = response.data.data as Array<{ id: string }>
+        creditIds.push(...credits.map((c) => c.id))
+      } catch (e) {
+        console.warn(`Warning: could not fetch credits for client ${clientId}: ${e}`)
+      }
+    }
+    if (creditIds.length > 0) {
+      await this.bulkDelete('credits', creditIds).catch((e) => {
+        console.warn(`Warning: failed to clean up credits: ${e}`)
+      })
+    }
+
     if (this.createdInvoiceIds.length > 0) {
       await this.bulkDelete('invoices', this.createdInvoiceIds).catch((e) => {
         console.warn(`Warning: failed to clean up invoices: ${e}`)

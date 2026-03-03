@@ -13,6 +13,8 @@ export interface InvoiceNinjaClient {
 export interface InvoiceNinjaInvoice {
   id: string
   amount: number
+  date?: string        // Invoice date "YYYY-MM-DD"; primary sort key
+  created_at?: number  // Unix timestamp; tiebreaker when dates are equal
 }
 
 export interface InvoiceAllocation {
@@ -28,5 +30,7 @@ export interface IInvoiceRepository {
     typeId: string,
   ): Promise<unknown>
   getClients(name: string): Promise<InvoiceNinjaClient[]>
+  getClientById(id: string): Promise<InvoiceNinjaClient>
   listInvoices(clientId: string): Promise<InvoiceNinjaInvoice[]>
+  createCredit(clientId: string, amount: number): Promise<unknown>
 }

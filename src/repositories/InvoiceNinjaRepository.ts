@@ -52,7 +52,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
     return this.request(async () => {
       // First try to get clients by name filter
       const response = await this.axiosInstance.get('/clients', {
-        params: { name },
+        params: { name, per_page: 5000 },
       })
       const clientsByName = (response.data.data as InvoiceNinjaClient[]).filter(
         (c) => !c.is_deleted,
@@ -64,11 +64,20 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
       }
 
       // If no results by name, fetch all clients to allow contact name matching
-      const allClientsResponse = await this.axiosInstance.get('/clients')
+      const allClientsResponse = await this.axiosInstance.get('/clients', {
+        params: { per_page: 5000 },
+      })
       return (allClientsResponse.data.data as InvoiceNinjaClient[]).filter(
         (c) => !c.is_deleted,
       )
     }, 'Error fetching clients')
+  }
+
+  public async getClientById(id: string): Promise<InvoiceNinjaClient> {
+    return this.request(async () => {
+      const response = await this.axiosInstance.get(`/clients/${id}`)
+      return response.data.data as InvoiceNinjaClient
+    }, `Error fetching client ${id}`)
   }
 
   public async listInvoices(clientId: string): Promise<InvoiceNinjaInvoice[]> {
@@ -82,5 +91,17 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
       })
       return response.data.data as InvoiceNinjaInvoice[]
     }, 'Error fetching invoices')
+  }
+
+  public async createCredit(clientId: string, amount: number): Promise<unknown> {
+    return this.request(async () => {
+      const response = await this.axiosInstance.post('/credits', {
+        client_id: clientId,
+        line_items: [{ cost: amount, quantity: 1 }],
+      })
+      const credit = response.data.data as { id: string }
+      await this.axiosInstance.put(`/credits/${credit.id}?mark_sent=true`, {})
+      return credit
+    }, 'Error creating credit')
   }
 }

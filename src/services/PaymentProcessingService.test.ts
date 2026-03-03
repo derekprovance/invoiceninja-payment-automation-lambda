@@ -26,7 +26,9 @@ function makeRepo(
   return {
     createPayment: vi.fn().mockResolvedValue({ id: 'pay-1' }),
     getClients: vi.fn().mockResolvedValue([]),
+    getClientById: vi.fn().mockResolvedValue({} as any),
     listInvoices: vi.fn().mockResolvedValue([]),
+    createCredit: vi.fn().mockResolvedValue({ id: 'credit-1' }),
     ...overrides,
   }
 }
@@ -64,6 +66,7 @@ describe('PaymentProcessingService', () => {
   })
 
   it('matches with float tolerance (10.1 + 20.2 ≈ 30.3)', async () => {
+    const createCredit = vi.fn().mockResolvedValue({ id: 'credit-1' })
     const invoices: InvoiceNinjaInvoice[] = [
       { id: 'inv-1', amount: 10.1 },
       { id: 'inv-2', amount: 20.2 },
@@ -73,10 +76,12 @@ describe('PaymentProcessingService', () => {
         .fn()
         .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
       listInvoices: vi.fn().mockResolvedValue(invoices),
+      createCredit,
     })
     const svc = new PaymentProcessingService(repo)
     const result = await svc.processPayment(makePayment('Alice Bob', 30.3))
     expect(result.status).toBe('success')
+    expect(createCredit).not.toHaveBeenCalled()
   })
 
   it('throws UnhandledScenarioError when multiple clients have the same name', async () => {
@@ -207,8 +212,8 @@ describe('PaymentProcessingService', () => {
           .fn()
           .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
         listInvoices: vi.fn().mockResolvedValue([
-          { id: 'inv-2', amount: 30 },
-          { id: 'inv-1', amount: 10 },
+          { id: 'inv-2', amount: 30, date: '2024-02-01' },
+          { id: 'inv-1', amount: 10, date: '2024-01-01' },
         ]),
         createPayment,
       })
@@ -228,12 +233,14 @@ describe('PaymentProcessingService', () => {
 
     it('Scenario 4: $20 payment, $10 invoice → $10 paid in full, $10 overpayment creates credit', async () => {
       const createPayment = vi.fn().mockResolvedValue({ id: 'pay-1' })
+      const createCredit = vi.fn().mockResolvedValue({ id: 'credit-1' })
       const repo = makeRepo({
         getClients: vi
           .fn()
           .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
         listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 10 }]),
         createPayment,
+        createCredit,
       })
       const svc = new PaymentProcessingService(repo)
       const result = await svc.processPayment(makePayment('Alice Bob', 20))
@@ -241,6 +248,30 @@ describe('PaymentProcessingService', () => {
       expect(createPayment).toHaveBeenCalledWith(
         [{ invoice_id: 'inv-1', amount: 10 }],
         20,
+        'c1',
+        'gateway-25',
+      )
+      expect(createCredit).toHaveBeenCalledWith('c1', 10)
+    })
+
+    it('Scenario 5: exact match — pays matching invoice even when an older one exists', async () => {
+      const createPayment = vi.fn().mockResolvedValue({ id: 'pay-1' })
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([{ id: 'c1', name: 'Alice Bob', contacts: [] }]),
+        listInvoices: vi.fn().mockResolvedValue([
+          { id: 'inv-old', amount: 7, date: '2024-01-01' },
+          { id: 'inv-exact', amount: 10, date: '2024-02-01' },
+        ]),
+        createPayment,
+      })
+      const svc = new PaymentProcessingService(repo)
+      const result = await svc.processPayment(makePayment('Alice Bob', 10))
+      expect(result.status).toBe('success')
+      expect(createPayment).toHaveBeenCalledWith(
+        [{ invoice_id: 'inv-exact', amount: 10 }],
+        10,
         'c1',
         'gateway-25',
       )
