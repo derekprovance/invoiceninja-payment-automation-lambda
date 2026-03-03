@@ -36,6 +36,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
     amount: number,
     clientId: string,
     typeId: string,
+    traceId: string,
   ): Promise<unknown> {
     return this.request(async () => {
       const response = await this.axiosInstance.post('/payments', {
@@ -44,7 +45,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
         is_manual: false,
         type_id: typeId,
         invoices: allocations,
-        transaction_reference: 'Lambda',
+        transaction_reference: `Lambda:${traceId}`,
       })
       return response.data
     }, 'Error creating payment')
@@ -98,11 +99,12 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
   public async createCredit(
     clientId: string,
     amount: number,
+    traceId: string,
   ): Promise<unknown> {
     return this.request(async () => {
       const response = await this.axiosInstance.post('/credits', {
         client_id: clientId,
-        line_items: [{ cost: amount, quantity: 1 }],
+        line_items: [{ cost: amount, quantity: 1, notes: `Overpayment surplus (trace: ${traceId})` }],
       })
       const credit = response.data.data as { id: string }
       await this.axiosInstance.put(`/credits/${credit.id}?mark_sent=true`, {})

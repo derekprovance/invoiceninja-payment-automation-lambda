@@ -1,7 +1,12 @@
+const PLACEHOLDER_PATTERN = /^your_.*_here$/
+
 function requireEnv(name: string): string {
   const value = process.env[name]
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`)
+  }
+  if (PLACEHOLDER_PATTERN.test(value)) {
+    throw new Error(`Environment variable ${name} still has placeholder value. Update .env with real values.`)
   }
   return value
 }

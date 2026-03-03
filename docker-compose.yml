@@ -22,12 +22,25 @@ services:
       timeout: 3s
       retries: 10
 
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8025/livez"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   invoiceninja:
     image: invoiceninja/invoiceninja:latest
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     environment:
       APP_URL: http://localhost:8000
@@ -40,7 +53,11 @@ services:
       DB_PASSWORD: ninja_password
       REDIS_HOST: redis
       QUEUE_CONNECTION: sync
-      MAIL_MAILER: log
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: noreply@uac.local
+      MAIL_FROM_NAME: "Union Aerospace Corporation"
       IN_USER_EMAIL: ${IN_USER_EMAIL:-admin@test.local}
       IN_PASSWORD: ${IN_PASSWORD:-TestPassword123}
     volumes:

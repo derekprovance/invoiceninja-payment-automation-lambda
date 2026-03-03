@@ -196,8 +196,8 @@ Optional:
 ### Integration Test Scenarios (payment.integration.test.ts)
 
 #### Client & Invoice Matching
-1. **Exact client name match** — Client "Alice Smith" with $150 invoice, payment for "Alice Smith" $150 → invoice marked paid (status_id = '4')
-2. **Contact name match** — Client "Smith Family" with contact "John Smith", payment for "John Smith" → payment succeeds (contact matching works)
+1. **Exact client name match** — Client "Samuel Hayden" with $150 invoice, payment for "Samuel Hayden" $150 → invoice marked paid (status_id = '4')
+2. **Contact name match** — Client "Hayden Foundation" with contact "Elena Richardson", payment for "Elena Richardson" → payment succeeds (contact matching works)
 
 #### Invoice Allocation
 3. **Multi-invoice allocation** — Client with [$20, $30] invoices, $50 payment → both invoices marked paid
@@ -216,8 +216,9 @@ Optional:
 10. **Exact match ignores age** — Client with [$10 oldest, $7.55 newer], $7.55 payment → $7.55 invoice marked paid (exact match takes precedence over oldest-first), $10 untouched
 
 #### Error Handling
-11. **No matching client** — Payment for "Ghost Person" → `no_client` status returned
-12. **Client with no invoices** — Client "Carol White" exists but has no invoices, payment attempted → `no_invoice` status returned
+11. **No matching client** — Payment for "Lost Soul" → `no_client` status returned
+12. **Client with no invoices** — Client "Malcolm Betruger" exists but has no invoices, payment attempted → `no_invoice` status returned
+13. **Ambiguous client name** — Two clients named "Marcus Strickland" exist, payment for "Marcus Strickland" → throws `UnhandledScenarioError` (ambiguous match)
 
 ### Expected Status Return Values
 

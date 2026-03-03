@@ -22,7 +22,7 @@ export const handler = async (event: SESEvent, context: Context) => {
 
   try {
     const payment = handleEmailEvent(event)
-    const result = await paymentProcessingService.processPayment(payment)
+    const result = await paymentProcessingService.processPayment(payment, requestId)
     logger.info({ requestId, status: result.status }, `Processing completed for ${payment.getName()}`)
     return result
   } catch (error) {

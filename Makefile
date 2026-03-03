@@ -3,8 +3,12 @@
 integration\:start:
 	@echo "Starting Docker services..."
 	docker compose up -d
-	@echo "Running Invoice Ninja init script..."
-	env bash scripts/init-invoiceninja.sh
+	@if [ ! -f docker/integration.env ]; then \
+		echo "First run — initializing Invoice Ninja..."; \
+		env bash scripts/init-invoiceninja.sh; \
+	else \
+		echo "Integration environment already initialized, skipping init."; \
+	fi
 
 integration\:run:
 	npm run test:integration

@@ -20,13 +20,13 @@ describe('Payment integration tests', () => {
 
   it('exact client name match: marks invoice as paid', async () => {
     const client = await testClient.createClient(
-      'Alice Smith',
-      'Alice',
-      'Smith',
+      'Samuel Hayden',
+      'Samuel',
+      'Hayden',
     )
     const inv = await testClient.createInvoice(client.id, 150)
 
-    const event = buildVenmoSesEvent('Alice Smith', 150)
+    const event = buildVenmoSesEvent('Samuel Hayden', 150)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -41,13 +41,13 @@ describe('Payment integration tests', () => {
 
   it('contact name match: finds client by contact first+last name', async () => {
     const client = await testClient.createClient(
-      'Smith Family',
-      'John',
-      'Smith',
+      'Hayden Foundation',
+      'Elena',
+      'Richardson',
     )
     await testClient.createInvoice(client.id, 75.5)
 
-    const event = buildVenmoSesEvent('John Smith', 75.5)
+    const event = buildVenmoSesEvent('Elena Richardson', 75.5)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -55,11 +55,11 @@ describe('Payment integration tests', () => {
   })
 
   it('multi-invoice allocation: two invoices fully paid by combined amount', async () => {
-    const client = await testClient.createClient('Bob Jones', 'Bob', 'Jones')
+    const client = await testClient.createClient('Olivia Pierce', 'Olivia', 'Pierce')
     const inv1 = await testClient.createInvoice(client.id, 20)
     const inv2 = await testClient.createInvoice(client.id, 30)
 
-    const event = buildVenmoSesEvent('Bob Jones', 50)
+    const event = buildVenmoSesEvent('Olivia Pierce', 50)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -72,7 +72,7 @@ describe('Payment integration tests', () => {
   })
 
   it('no matching client: returns no_client status', async () => {
-    const event = buildVenmoSesEvent('Ghost Person', 50)
+    const event = buildVenmoSesEvent('Lost Soul', 50)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -80,9 +80,9 @@ describe('Payment integration tests', () => {
   })
 
   it('client with no invoices: returns no_invoice status', async () => {
-    await testClient.createClient('Carol White', 'Carol', 'White')
+    await testClient.createClient('Malcolm Betruger', 'Malcolm', 'Betruger')
 
-    const event = buildVenmoSesEvent('Carol White', 50)
+    const event = buildVenmoSesEvent('Malcolm Betruger', 50)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -90,10 +90,10 @@ describe('Payment integration tests', () => {
   })
 
   it('partial payment: invoice stays open', async () => {
-    const client = await testClient.createClient('Dana Brown', 'Dana', 'Brown')
+    const client = await testClient.createClient('Jack Oliveri', 'Jack', 'Oliveri')
     const inv = await testClient.createInvoice(client.id, 30)
 
-    const event = buildVenmoSesEvent('Dana Brown', 20)
+    const event = buildVenmoSesEvent('Jack Oliveri', 20)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -108,10 +108,10 @@ describe('Payment integration tests', () => {
   })
 
   it('overpayment: invoice paid, full payment recorded, and surplus credited', async () => {
-    const client = await testClient.createClient('Eve Black', 'Eve', 'Black')
+    const client = await testClient.createClient('Ellen Moon', 'Ellen', 'Moon')
     const inv = await testClient.createInvoice(client.id, 10)
 
-    const event = buildVenmoSesEvent('Eve Black', 20)
+    const event = buildVenmoSesEvent('Ellen Moon', 20)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -129,15 +129,15 @@ describe('Payment integration tests', () => {
 
   it('three-invoice oldest-first: oldest invoices paid first', async () => {
     const client = await testClient.createClient(
-      'Frank Green',
-      'Frank',
-      'Green',
+      'Kelvin Garland',
+      'Kelvin',
+      'Garland',
     )
     const inv10 = await testClient.createInvoice(client.id, 10)
     const inv25 = await testClient.createInvoice(client.id, 25)
     const inv40 = await testClient.createInvoice(client.id, 40)
 
-    const event = buildVenmoSesEvent('Frank Green', 35)
+    const event = buildVenmoSesEvent('Kelvin Garland', 35)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -154,11 +154,11 @@ describe('Payment integration tests', () => {
   })
 
   it('float tolerance: imprecise allocation amounts accepted', async () => {
-    const client = await testClient.createClient('Grace Ho', 'Grace', 'Ho')
+    const client = await testClient.createClient('Sasha Sretensky', 'Sasha', 'Sretensky')
     const inv1 = await testClient.createInvoice(client.id, 10.1)
     const inv2 = await testClient.createInvoice(client.id, 20.2)
 
-    const event = buildVenmoSesEvent('Grace Ho', 30.3)
+    const event = buildVenmoSesEvent('Sasha Sretensky', 30.3)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -175,13 +175,13 @@ describe('Payment integration tests', () => {
   })
 
   it('paid invoice excluded: only unpaid invoice receives payment', async () => {
-    const client = await testClient.createClient('Henry Wu', 'Henry', 'Wu')
+    const client = await testClient.createClient('Richard Meyers', 'Richard', 'Meyers')
     const inv50 = await testClient.createInvoice(client.id, 50)
     const openInv = await testClient.createInvoice(client.id, 30)
 
     await testClient.recordPayment(client.id, inv50.id, 50)
 
-    const event = buildVenmoSesEvent('Henry Wu', 30)
+    const event = buildVenmoSesEvent('Richard Meyers', 30)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -195,17 +195,17 @@ describe('Payment integration tests', () => {
   })
 
   it('exact match: $7.55 payment pays the $7.55 invoice, not the older $10 invoice', async () => {
-    const client = await testClient.createClient('Ivy Chen', 'Ivy', 'Chen')
+    const client = await testClient.createClient('Elizabeth McNeil', 'Elizabeth', 'McNeil')
     const inv10 = await testClient.createInvoice(client.id, 10)
     const inv755 = await testClient.createInvoice(client.id, 7.55)
 
-    const event = buildVenmoSesEvent('Ivy Chen', 7.55)
+    const event = buildVenmoSesEvent('Elizabeth McNeil', 7.55)
     const context = createMockContext()
     const result = await handler(event, context)
 
     expect(result.status).toBe('success')
 
-    // $7.55 invoice should be paid (matches exactly via greedy sort)
+    // $7.55 invoice should be paid (exact match takes precedence)
     const updated755 = await testClient.getInvoice(inv755.id)
     expect(updated755.status_id).toBe(INVOICE_STATUS_PAID)
 
@@ -220,11 +220,11 @@ describe('Payment integration tests', () => {
   })
 
   it('oldest-first: larger but older invoice is paid before smaller newer one', async () => {
-    const client = await testClient.createClient('Jake Kim', 'Jake', 'Kim')
+    const client = await testClient.createClient('Theodore McNeil', 'Theodore', 'McNeil')
     const invLarge = await testClient.createInvoice(client.id, 30) // created first → oldest
     const invSmall = await testClient.createInvoice(client.id, 10) // created second → newest
 
-    const event = buildVenmoSesEvent('Jake Kim', 15)
+    const event = buildVenmoSesEvent('Theodore McNeil', 15)
     const context = createMockContext()
     const result = await handler(event, context)
 
@@ -244,10 +244,10 @@ describe('Payment integration tests', () => {
   })
 
   it('ambiguous client name: throws when two clients share the same name', async () => {
-    await testClient.createClient('Sam Taylor', 'Sam', 'Taylor')
-    await testClient.createClient('Sam Taylor', 'Sam', 'Taylor')
+    await testClient.createClient('Marcus Strickland', 'Marcus', 'Strickland')
+    await testClient.createClient('Marcus Strickland', 'Marcus', 'Strickland')
 
-    const event = buildVenmoSesEvent('Sam Taylor', 50)
+    const event = buildVenmoSesEvent('Marcus Strickland', 50)
     const context = createMockContext()
     await expect(handler(event, context)).rejects.toThrow()
   })

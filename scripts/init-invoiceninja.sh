@@ -35,7 +35,25 @@ if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
   exit 1
 fi
 
-echo "Token obtained. Writing $ENV_OUT..."
+echo "Token obtained. Renaming company to Union Aerospace Corporation..."
+
+COMPANY_ID=$(curl -sf "$BASE_URL/api/v1/companies" \
+  -H "X-API-TOKEN: $TOKEN" \
+  -H "X-Requested-With: XMLHttpRequest" \
+  | jq -r '.data[0].id')
+
+if [ -z "$COMPANY_ID" ] || [ "$COMPANY_ID" = "null" ]; then
+  echo "ERROR: Failed to extract company ID from API response" >&2
+  exit 1
+fi
+
+curl -sf -X PUT "$BASE_URL/api/v1/companies/$COMPANY_ID" \
+  -H "X-API-TOKEN: $TOKEN" \
+  -H "X-Requested-With: XMLHttpRequest" \
+  -H "Content-Type: application/json" \
+  -d '{"settings": {"name": "Union Aerospace Corporation"}}' > /dev/null
+
+echo "Company renamed. Writing $ENV_OUT..."
 
 mkdir -p "$(dirname "$ENV_OUT")"
 # Create the file with owner-read-write only before writing the token (umask-safe).

@@ -22,27 +22,27 @@ export class PaymentProcessingService {
     this.invoiceNinjaRepository = invoiceNinjaRepository
   }
 
-  public async processPayment(payment: IPayment): Promise<PaymentResult> {
-    logger.debug(`Processing payment for ${payment.getName()}`)
+  public async processPayment(payment: IPayment, traceId: string): Promise<PaymentResult> {
+    logger.debug({ traceId }, `Processing payment for ${payment.getName()}`)
 
-    const client = await this.getClient(payment.getName())
+    const client = await this.getClient(payment.getName(), traceId)
 
     if (!client) {
-      logger.info(`No client was found for payment ${payment.getName()}`)
+      logger.info({ traceId }, `No client was found for payment ${payment.getName()}`)
       return { status: 'no_client' }
     }
 
     const invoices = await this.invoiceNinjaRepository.listInvoices(client.id)
 
     if (invoices.length === 0) {
-      logger.info(`No invoices found for client ${payment.getName()}`)
+      logger.info({ traceId }, `No invoices found for client ${payment.getName()}`)
       return { status: 'no_invoice' }
     }
 
     const allocations = this.allocatePayment(invoices, payment.getAmount())
 
     logger.info(
-      { clientId: client.id, amount: payment.getAmount(), invoiceIds: allocations.map((a) => a.invoice_id), typeId: payment.getPaymentId() },
+      { traceId, clientId: client.id, amount: payment.getAmount(), invoiceIds: allocations.map((a) => a.invoice_id), typeId: payment.getPaymentId() },
       'Creating payment',
     )
     const data = await this.invoiceNinjaRepository.createPayment(
@@ -50,16 +50,17 @@ export class PaymentProcessingService {
       payment.getAmount(),
       client.id,
       payment.getPaymentId(),
+      traceId,
     )
 
     const totalAllocated = allocations.reduce((sum, a) => sum + a.amount, 0)
     const surplus = payment.getAmount() - totalAllocated
     if (surplus > CURRENCY_EPSILON) {
       logger.info(
-        { clientId: client.id, amount: payment.getAmount(), surplus },
+        { traceId, clientId: client.id, amount: payment.getAmount(), surplus },
         'Payment exceeds invoices; creating credit',
       )
-      await this.invoiceNinjaRepository.createCredit(client.id, surplus)
+      await this.invoiceNinjaRepository.createCredit(client.id, surplus, traceId)
     }
 
     return { status: 'success', data }
@@ -71,11 +72,11 @@ export class PaymentProcessingService {
   ): InvoiceAllocation[] {
     // Pass 1: exact match — if exactly one invoice equals the payment amount, pay only it.
     const exactMatches = invoices.filter(
-      (inv) => Math.abs(inv.amount - paymentAmount) <= CURRENCY_EPSILON,
+      (inv) => Math.abs(inv.balance - paymentAmount) <= CURRENCY_EPSILON,
     )
     if (exactMatches.length === 1) {
       return [
-        { invoice_id: exactMatches[0].id, amount: exactMatches[0].amount },
+        { invoice_id: exactMatches[0].id, amount: exactMatches[0].balance },
       ]
     }
 
@@ -92,7 +93,7 @@ export class PaymentProcessingService {
 
     for (const invoice of sorted) {
       if (remaining <= 0) break
-      const applied = Math.min(invoice.amount, remaining)
+      const applied = Math.min(invoice.balance, remaining)
       allocations.push({ invoice_id: invoice.id, amount: applied })
       remaining -= applied
     }
@@ -102,7 +103,9 @@ export class PaymentProcessingService {
 
   private async getClient(
     clientName: string,
+    traceId: string,
   ): Promise<InvoiceNinjaClient | null> {
+    logger.debug({ traceId }, `Looking up client: ${clientName}`)
     const clients = await this.invoiceNinjaRepository.getClients(clientName)
     if (clients.length === 0) return null
 
