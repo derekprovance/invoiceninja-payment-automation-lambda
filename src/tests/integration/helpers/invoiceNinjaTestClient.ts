@@ -42,7 +42,10 @@ export class InvoiceNinjaTestClient {
     return created
   }
 
-  async createInvoice(clientId: string, amount: number): Promise<CreatedInvoice> {
+  async createInvoice(
+    clientId: string,
+    amount: number,
+  ): Promise<CreatedInvoice> {
     const response = await this.client.post('/invoices', {
       client_id: clientId,
       line_items: [
@@ -65,7 +68,9 @@ export class InvoiceNinjaTestClient {
     return created
   }
 
-  async getPaymentsForClient(clientId: string): Promise<Array<{ id: string; amount: number }>> {
+  async getPaymentsForClient(
+    clientId: string,
+  ): Promise<Array<{ id: string; amount: number }>> {
     const response = await this.client.get('/payments', {
       params: { client_id: clientId },
     })
@@ -83,13 +88,29 @@ export class InvoiceNinjaTestClient {
     return client.credit_balance
   }
 
-  async recordPayment(clientId: string, invoiceId: string, amount: number): Promise<void> {
+  async recordPayment(
+    clientId: string,
+    invoiceId: string,
+    amount: number,
+  ): Promise<void> {
     const response = await this.client.post('/payments', {
       client_id: clientId,
       amount,
       invoices: [{ invoice_id: invoiceId, amount }],
     })
     this.createdPaymentIds.push(response.data.data.id)
+  }
+
+  private async cleanupTracked(
+    resource: string,
+    ids: string[],
+    clearFn: () => void,
+  ): Promise<void> {
+    if (ids.length === 0) return
+    await this.bulkDelete(resource, ids).catch((e) =>
+      console.warn(`Warning: failed to clean up ${resource}: ${e}`),
+    )
+    clearFn()
   }
 
   async cleanupAll(): Promise<void> {
@@ -101,7 +122,9 @@ export class InvoiceNinjaTestClient {
         const ids = (payments as Array<{ id: string }>).map((p) => p.id)
         this.createdPaymentIds.push(...ids)
       } catch (e) {
-        console.warn(`Warning: could not fetch payments for client ${clientId}: ${e}`)
+        console.warn(
+          `Warning: could not fetch payments for client ${clientId}: ${e}`,
+        )
       }
     }
 
@@ -124,27 +147,20 @@ export class InvoiceNinjaTestClient {
         const credits = response.data.data as Array<{ id: string }>
         creditIds.push(...credits.map((c) => c.id))
       } catch (e) {
-        console.warn(`Warning: could not fetch credits for client ${clientId}: ${e}`)
+        console.warn(
+          `Warning: could not fetch credits for client ${clientId}: ${e}`,
+        )
       }
     }
-    if (creditIds.length > 0) {
-      await this.bulkDelete('credits', creditIds).catch((e) => {
-        console.warn(`Warning: failed to clean up credits: ${e}`)
-      })
-    }
+    await this.cleanupTracked('credits', creditIds, () => {})
 
-    if (this.createdInvoiceIds.length > 0) {
-      await this.bulkDelete('invoices', this.createdInvoiceIds).catch((e) => {
-        console.warn(`Warning: failed to clean up invoices: ${e}`)
-      })
+    await this.cleanupTracked('invoices', this.createdInvoiceIds, () => {
       this.createdInvoiceIds = []
-    }
-    if (this.createdClientIds.length > 0) {
-      await this.bulkDelete('clients', this.createdClientIds).catch((e) => {
-        console.warn(`Warning: failed to clean up clients: ${e}`)
-      })
+    })
+
+    await this.cleanupTracked('clients', this.createdClientIds, () => {
       this.createdClientIds = []
-    }
+    })
   }
 
   private async bulkDelete(resource: string, ids: string[]): Promise<void> {

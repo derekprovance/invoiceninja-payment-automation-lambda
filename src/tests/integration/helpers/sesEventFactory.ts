@@ -1,6 +1,9 @@
 import { SESEvent } from 'aws-lambda'
 
-export function buildVenmoSesEvent(payerName: string, amount: number): SESEvent {
+export function buildVenmoSesEvent(
+  payerName: string,
+  amount: number,
+): SESEvent {
   const subject = `${payerName} paid you $${amount.toFixed(2)}`
   const from = 'Venmo <venmo@venmo.com>'
   const messageId = `test-${Date.now()}`
@@ -40,7 +43,8 @@ export function buildVenmoSesEvent(payerName: string, amount: number): SESEvent 
             dmarcVerdict: { status: 'PASS' },
             action: {
               type: 'Lambda',
-              functionArn: 'arn:aws:lambda:us-east-1:123456789012:function:test',
+              functionArn:
+                'arn:aws:lambda:us-east-1:123456789012:function:test',
               invocationType: 'Event',
             },
           },

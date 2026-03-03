@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { handler } from '../../../index'
 import { InvoiceNinjaTestClient } from './helpers/invoiceNinjaTestClient'
 import { buildVenmoSesEvent } from './helpers/sesEventFactory'
+import { INVOICE_STATUS_PAID } from '../../../src/interfaces/IInvoiceRepository'
 
 const BASE_URL = process.env.IN_BASE_URL!
 const TOKEN = process.env.IN_TOKEN!
-const INVOICE_STATUS_PAID = '4'
 
 describe('Payment integration tests', () => {
   let testClient: InvoiceNinjaTestClient
@@ -19,7 +19,11 @@ describe('Payment integration tests', () => {
   })
 
   it('exact client name match: marks invoice as paid', async () => {
-    const client = await testClient.createClient('Alice Smith', 'Alice', 'Smith')
+    const client = await testClient.createClient(
+      'Alice Smith',
+      'Alice',
+      'Smith',
+    )
     const inv = await testClient.createInvoice(client.id, 150)
 
     const event = buildVenmoSesEvent('Alice Smith', 150)
@@ -35,7 +39,11 @@ describe('Payment integration tests', () => {
   })
 
   it('contact name match: finds client by contact first+last name', async () => {
-    const client = await testClient.createClient('Smith Family', 'John', 'Smith')
+    const client = await testClient.createClient(
+      'Smith Family',
+      'John',
+      'Smith',
+    )
     await testClient.createInvoice(client.id, 75.5)
 
     const event = buildVenmoSesEvent('John Smith', 75.5)
@@ -113,7 +121,11 @@ describe('Payment integration tests', () => {
   })
 
   it('three-invoice oldest-first: oldest invoices paid first', async () => {
-    const client = await testClient.createClient('Frank Green', 'Frank', 'Green')
+    const client = await testClient.createClient(
+      'Frank Green',
+      'Frank',
+      'Green',
+    )
     const inv10 = await testClient.createInvoice(client.id, 10)
     const inv25 = await testClient.createInvoice(client.id, 25)
     const inv40 = await testClient.createInvoice(client.id, 40)
@@ -130,7 +142,7 @@ describe('Payment integration tests', () => {
     expect(updated25.status_id).toBe(INVOICE_STATUS_PAID)
 
     const updated40 = await testClient.getInvoice(inv40.id)
-    expect(updated40.status_id).not.toBe('4')
+    expect(updated40.status_id).not.toBe(INVOICE_STATUS_PAID)
   })
 
   it('float tolerance: imprecise allocation amounts accepted', async () => {
@@ -198,8 +210,8 @@ describe('Payment integration tests', () => {
 
   it('oldest-first: larger but older invoice is paid before smaller newer one', async () => {
     const client = await testClient.createClient('Jake Kim', 'Jake', 'Kim')
-    const invLarge = await testClient.createInvoice(client.id, 30)  // created first → oldest
-    const invSmall = await testClient.createInvoice(client.id, 10)  // created second → newest
+    const invLarge = await testClient.createInvoice(client.id, 30) // created first → oldest
+    const invSmall = await testClient.createInvoice(client.id, 10) // created second → newest
 
     const event = buildVenmoSesEvent('Jake Kim', 15)
     const result = await handler(event)
@@ -217,5 +229,13 @@ describe('Payment integration tests', () => {
     const payments = await testClient.getPaymentsForClient(client.id)
     expect(payments).toHaveLength(1)
     expect(payments[0].amount).toBe(15)
+  })
+
+  it('ambiguous client name: throws when two clients share the same name', async () => {
+    await testClient.createClient('Sam Taylor', 'Sam', 'Taylor')
+    await testClient.createClient('Sam Taylor', 'Sam', 'Taylor')
+
+    const event = buildVenmoSesEvent('Sam Taylor', 50)
+    await expect(handler(event)).rejects.toThrow()
   })
 })

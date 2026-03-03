@@ -1,5 +1,3 @@
-import { IPaymentProcessor } from '../interfaces/IPaymentProcessor'
-
 function requireEnv(name: string): string {
   const value = process.env[name]
   if (!value) {
@@ -14,8 +12,8 @@ export const config = {
     venmo: {
       gatewayId: process.env.VENMO_PAYMENT_GATEWAY_ID ?? '25',
       email: process.env.VENMO_EMAIL ?? 'venmo@venmo.com',
-    } as IPaymentProcessor,
-  } as Record<string, IPaymentProcessor>,
+    },
+  },
   token: requireEnv('TOKEN'),
   logLevel: process.env.LOG_LEVEL ?? 'info',
   appName: 'invoiceninja-payment-automation',

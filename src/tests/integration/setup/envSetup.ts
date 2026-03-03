@@ -2,7 +2,10 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 // import.meta.dirname is available in Node 22+ (project minimum per package.json engines field).
-const envFile = resolve(import.meta.dirname, '../../../../docker/integration.env')
+const envFile = resolve(
+  import.meta.dirname,
+  '../../../../docker/integration.env',
+)
 
 let raw: string
 try {

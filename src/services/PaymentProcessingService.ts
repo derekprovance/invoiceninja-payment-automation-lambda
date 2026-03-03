@@ -41,10 +41,13 @@ export class PaymentProcessingService {
 
     const allocations = this.allocatePayment(invoices, payment.getAmount())
 
-    const data = await this.createPayment(
+    logger.info(
+      `Creating a payment ($${payment.getAmount()}) for ${client.id} on invoices ${allocations.map((a) => a.invoice_id)} with type ${payment.getPaymentId()}.`,
+    )
+    const data = await this.invoiceNinjaRepository.createPayment(
       allocations,
-      client.id,
       payment.getAmount(),
+      client.id,
       payment.getPaymentId(),
     )
 
@@ -69,7 +72,9 @@ export class PaymentProcessingService {
       (inv) => Math.abs(inv.amount - paymentAmount) <= CURRENCY_EPSILON,
     )
     if (exactMatches.length === 1) {
-      return [{ invoice_id: exactMatches[0].id, amount: exactMatches[0].amount }]
+      return [
+        { invoice_id: exactMatches[0].id, amount: exactMatches[0].amount },
+      ]
     }
 
     // Pass 2: no unique exact match — pay oldest invoice first.
@@ -93,23 +98,6 @@ export class PaymentProcessingService {
     return allocations
   }
 
-  private async createPayment(
-    allocations: InvoiceAllocation[],
-    clientId: string,
-    amount: number,
-    paymentTypeId: string,
-  ): Promise<unknown> {
-    logger.info(
-      `Creating a payment ($${amount}) for ${clientId} on invoices ${allocations.map((a) => a.invoice_id)} with type ${paymentTypeId}.`,
-    )
-    return await this.invoiceNinjaRepository.createPayment(
-      allocations,
-      amount,
-      clientId,
-      paymentTypeId,
-    )
-  }
-
   private async getClient(
     clientName: string,
   ): Promise<InvoiceNinjaClient | null> {
@@ -125,7 +113,7 @@ export class PaymentProcessingService {
     if (nameMatches.length === 1) return nameMatches[0]
     if (nameMatches.length > 1) {
       throw new UnhandledScenarioError(
-        `More than one client was found with the name ${clientName}`,
+        `More than one client matched by name: "${clientName}"`,
       )
     }
 
@@ -151,7 +139,7 @@ export class PaymentProcessingService {
     if (contactMatches.length === 1) return contactMatches[0]
     if (contactMatches.length > 1) {
       throw new UnhandledScenarioError(
-        `More than one client was found with the name ${clientName}`,
+        `More than one client matched by contact name: "${clientName}"`,
       )
     }
 

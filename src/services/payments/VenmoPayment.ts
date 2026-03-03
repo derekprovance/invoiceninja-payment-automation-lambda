@@ -5,7 +5,7 @@ import { InvalidPaymentError } from '../../utils/errors/InvalidPaymentError'
 
 export class VenmoPayment implements IPayment {
   private static readonly NAME_REGEX = /(\S.*\S) paid you/
-  private static readonly MONEY_REGEX = /\$([0-9]+(\.[0-9]{1,2})?)/
+  private static readonly MONEY_REGEX = /\$([0-9]+(?:\.[0-9]{1,2})?)/
 
   private name: string
   private amount: number
@@ -36,7 +36,7 @@ export class VenmoPayment implements IPayment {
     return this.gatewayId
   }
 
-  public isValid(): boolean {
+  private isValid(): boolean {
     return Boolean(this.name) && this.amount > 0
   }
 

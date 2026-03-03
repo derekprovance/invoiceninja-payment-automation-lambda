@@ -7,6 +7,8 @@ import {
   InvoiceNinjaInvoice,
 } from '../interfaces/IInvoiceRepository'
 
+const isActive = (c: InvoiceNinjaClient): boolean => !c.is_deleted
+
 export class InvoiceNinjaRepository implements IInvoiceRepository {
   private axiosInstance: AxiosInstance
 
@@ -55,7 +57,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
         params: { name, per_page: 5000 },
       })
       const clientsByName = (response.data.data as InvoiceNinjaClient[]).filter(
-        (c) => !c.is_deleted,
+        isActive,
       )
 
       // If we found clients by name, return them
@@ -68,7 +70,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
         params: { per_page: 5000 },
       })
       return (allClientsResponse.data.data as InvoiceNinjaClient[]).filter(
-        (c) => !c.is_deleted,
+        isActive,
       )
     }, 'Error fetching clients')
   }
@@ -93,7 +95,10 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
     }, 'Error fetching invoices')
   }
 
-  public async createCredit(clientId: string, amount: number): Promise<unknown> {
+  public async createCredit(
+    clientId: string,
+    amount: number,
+  ): Promise<unknown> {
     return this.request(async () => {
       const response = await this.axiosInstance.post('/credits', {
         client_id: clientId,

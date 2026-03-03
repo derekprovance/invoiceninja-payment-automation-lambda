@@ -26,7 +26,6 @@ function isValidEvent(event: SESEvent): boolean {
   return (
     event?.Records &&
     event.Records.length > 0 &&
-    Boolean(event.Records[0].ses?.mail?.source) &&
     Boolean(event.Records[0].ses?.mail?.commonHeaders?.from?.length) &&
     Boolean(event.Records[0].ses?.mail?.commonHeaders?.subject)
   )
