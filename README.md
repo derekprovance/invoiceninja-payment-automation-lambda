@@ -60,9 +60,10 @@ Set up the environment variables for your Lambda function. Below is a table deta
 | ---------------------- | -------------------------------------------------------- | ------------- | -------- |
 | `BASE_URL`             | The URL for your Invoice Ninja instance.                 |               | true |
 | `TOKEN`                | Your Invoice Ninja API token.                            |               | true |
-| `VENMO_PAYMENT_GATEWAY_ID` | Payment gateway ID for Venmo in Invoice Ninja database. | `25`          | false |
-| `VENMO_EMAIL`          | Optional parameter in case Venmo changes their email.    |               | true |
-| `LOG_LEVEL`            | Optional log level for debugging and monitoring.         | `info`        | false |
+| `VENMO_EMAIL`          | Email address for Venmo payment notifications.           | `venmo@venmo.com` | false |
+| `VENMO_PAYMENT_GATEWAY_ID` | Payment gateway ID for Venmo in Invoice Ninja.       | `25`          | false |
+| `VENMO_USERNAME_CONTACT_FIELD` | Custom contact field for Venmo username matching (custom_value1-4). Enables matching payments by Venmo username instead of client name. |               | false |
+| `LOG_LEVEL`            | Logging level for debugging and monitoring (debug, info, warn, error). | `info`        | false |
 
 ### Compilation
 
@@ -72,7 +73,15 @@ Compile the TypeScript code:
 npm run compile
 ```
 
-This will output the compiled JavaScript files into a deployable zip under the `dist` folder
+This will output the compiled JavaScript files into a deployable zip under the `dist` folder.
+
+## Deployment
+
+Deploy to AWS Lambda:
+
+```bash
+npm run compile && aws lambda update-function-code --function-name ninja-payment-automation --zip-file fileb://dist/index.zip
+```
 
 ## Integration Testing
 

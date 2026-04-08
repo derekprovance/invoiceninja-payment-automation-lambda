@@ -10,6 +10,7 @@
     "build": "esbuild index.ts --bundle --minify --sourcemap --platform=node --target=es2022 --outfile=dist/index.js",
     "postbuild": "cd dist && zip -r index.zip index.js*",
     "compile": "npm run build",
+    "deploy": "npm run compile && aws lambda update-function-code --function-name ninja-payment-automation --zip-file fileb://dist/index.zip",
     "format": "prettier --write \"**/*.ts\"",
     "type-check": "tsc --noEmit",
     "test": "vitest run --project unit",
