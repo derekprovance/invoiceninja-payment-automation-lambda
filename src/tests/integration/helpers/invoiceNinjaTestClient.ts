@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios'
+import { InvoiceNinjaContact } from '../../../interfaces/IInvoiceRepository'
 
 export interface CreatedClient {
   id: string
@@ -32,10 +33,15 @@ export class InvoiceNinjaTestClient {
     name: string,
     firstName: string,
     lastName: string,
+    customValue1?: string,
   ): Promise<CreatedClient> {
+    const contact: InvoiceNinjaContact = { first_name: firstName, last_name: lastName }
+    if (customValue1) {
+      contact.custom_value1 = customValue1
+    }
     const response = await this.client.post('/clients', {
       name,
-      contacts: [{ first_name: firstName, last_name: lastName }],
+      contacts: [contact],
     })
     const created = response.data.data as CreatedClient
     this.createdClientIds.push(created.id)

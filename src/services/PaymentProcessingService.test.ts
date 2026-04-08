@@ -148,6 +148,59 @@ describe('PaymentProcessingService', () => {
       expect(result.status).toBe('success')
     })
 
+    it('matches contact via custom_value1 (Venmo Username) when present', async () => {
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([
+            makeClient('c1', 'Smith Family', [
+              { first_name: 'John', last_name: 'Smith', custom_value1: 'JohnVenmo' },
+            ]),
+          ]),
+        listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 50, balance: 50 }]),
+      })
+      const svc = new PaymentProcessingService(repo, 'custom_value1')
+      const result = await svc.processPayment(makePayment('JohnVenmo', 50), TRACE_ID)
+      expect(result.status).toBe('success')
+    })
+
+    it('prefers custom_value1 over first_name + last_name when present', async () => {
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([
+            makeClient('c1', 'Smith Family', [
+              { first_name: 'John', last_name: 'Smith', custom_value1: 'JohnVenmo' },
+            ]),
+          ]),
+        listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 50, balance: 50 }]),
+      })
+      const svc = new PaymentProcessingService(repo, 'custom_value1')
+      // Payment uses 'JohnVenmo' (custom_value1), not 'John Smith' (first + last)
+      const result = await svc.processPayment(makePayment('JohnVenmo', 50), TRACE_ID)
+      expect(result.status).toBe('success')
+      // Verify that 'John Smith' would NOT match (because custom_value1 is preferred)
+      const result2 = await svc.processPayment(makePayment('John Smith', 50), TRACE_ID)
+      expect(result2).toEqual({ status: 'no_client' })
+    })
+
+    it('falls back to first_name + last_name when custom field is configured but empty on contact', async () => {
+      const repo = makeRepo({
+        getClients: vi
+          .fn()
+          .mockResolvedValue([
+            makeClient('c1', 'Smith Family', [
+              { first_name: 'John', last_name: 'Smith' }, // no custom_value1
+            ]),
+          ]),
+        listInvoices: vi.fn().mockResolvedValue([{ id: 'inv-1', amount: 50, balance: 50 }]),
+      })
+      const svc = new PaymentProcessingService(repo, 'custom_value1')
+      // Payment name matches first + last; custom field is configured but not set on this contact
+      const result = await svc.processPayment(makePayment('John Smith', 50), TRACE_ID)
+      expect(result.status).toBe('success')
+    })
+
     it('throws UnhandledScenarioError when two clients match via contacts', async () => {
       const repo = makeRepo({
         getClients: vi

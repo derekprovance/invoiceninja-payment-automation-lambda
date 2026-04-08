@@ -1,6 +1,12 @@
+export type ContactCustomField = 'custom_value1' | 'custom_value2' | 'custom_value3' | 'custom_value4'
+
 export interface InvoiceNinjaContact {
   first_name: string
   last_name: string
+  custom_value1?: string
+  custom_value2?: string
+  custom_value3?: string
+  custom_value4?: string
 }
 
 export interface InvoiceNinjaClient {

@@ -40,7 +40,9 @@ The `allocatePayment()` method in `PaymentProcessingService` uses a **two-pass s
 
 **Pass 1**: Searches for exact name match (case-insensitive) in the `name` field of returned clients.
 
-**Pass 2**: If no single match, fetches full client details (via `getClientById()`) and searches contact records for matches on `first_name` + `last_name` (case-insensitive).
+**Pass 2**: If no single match, fetches full client details (via `getClientById()`) and searches contact records for matches:
+- **Custom Field First** (if `VENMO_USERNAME_CONTACT_FIELD` is configured): Checks the specified custom contact field (e.g., `custom_value1`) for a match on the payment name (case-insensitive). This allows mapping Venmo usernames or other unique identifiers to contacts.
+- **Fallback to Name Match**: If no custom field is configured, or all configured fields are empty on the contacts, searches `first_name` + `last_name` (case-insensitive) for a match.
 
 **Error Handling**: Throws `UnhandledScenarioError` if multiple clients match (ambiguous). Returns `no_client` status if no match.
 
@@ -108,6 +110,7 @@ Required (must be set):
 
 Optional:
 - `VENMO_PAYMENT_GATEWAY_ID` — Gateway ID in Invoice Ninja for Venmo (default: `25`).
+- `VENMO_USERNAME_CONTACT_FIELD` — Custom contact field for Venmo username matching (must be one of: `custom_value1`, `custom_value2`, `custom_value3`, `custom_value4`). When set, client matching uses this field before falling back to `first_name` + `last_name`. Allows exact matching on Venmo usernames or other unique identifiers stored in Invoice Ninja custom fields.
 - `LOG_LEVEL` — Logging level (default: `info`; use `debug` for detailed output).
 
 ### Integration Testing Environment
@@ -136,14 +139,14 @@ Optional:
 
 ### Unit Tests
 - Mock `IInvoiceRepository` interface; test `PaymentProcessingService` logic in isolation.
-- Verify: client matching, name normalization, exact-match and oldest-first allocation, float tolerance, error handling.
-- Run with `npm run test` (~30 tests).
+- Verify: client matching (including Venmo username custom fields), name normalization, exact-match and oldest-first allocation, float tolerance, error handling.
+- Run with `npm run test` (~33 tests).
 
 ### Integration Tests
 - Run against a real Invoice Ninja instance via Docker.
-- Verify: end-to-end payment processing, SES → Lambda → Invoice Ninja flow.
+- Verify: end-to-end payment processing, SES → Lambda → Invoice Ninja flow, Venmo username custom field matching.
 - Test data created and cleaned up per test (`afterEach` calls `testClient.cleanupAll()`).
-- Run with `npm run test:integration` (~12 tests).
+- Run with `npm run test:integration` (~13 tests).
 
 ### Test Configuration (vitest)
 - **Projects**: Two named projects: `unit` and `integration`.
@@ -178,6 +181,9 @@ Optional:
 8. **Contact match** — Client name "Smith Family" with contact "John Smith" and payment for "John Smith" → finds client via contact
 9. **Multiple client ambiguity (name)** — Two clients with same name → throws `UnhandledScenarioError`
 10. **Multiple client ambiguity (contacts)** — Two clients with same contact name → throws `UnhandledScenarioError`
+11. **Venmo username custom field match** — Client with `custom_value1` contact field = "john_smith", payment for "john_smith" → matches via custom field (exact match)
+12. **Prefers custom field over first+last name** — Client with `custom_value1` = "john_smith" and `first_name` = "different", payment for "john_smith" → matches custom field, ignores first+last name
+13. **Falls back to first+last when custom field empty** — Client with `custom_value1` configured globally but empty on contact, `first_name` = "john", `last_name` = "smith", payment for "john smith" → matches via first+last name fallback
 
 #### Payment Allocation Scenarios
 
@@ -198,6 +204,7 @@ Optional:
 #### Client & Invoice Matching
 1. **Exact client name match** — Client "Samuel Hayden" with $150 invoice, payment for "Samuel Hayden" $150 → invoice marked paid (status_id = '4')
 2. **Contact name match** — Client "Hayden Foundation" with contact "Elena Richardson", payment for "Elena Richardson" → payment succeeds (contact matching works)
+3. **Venmo username custom field match** — Client with contact `custom_value1` = "erichardson", $150 invoice, payment for "erichardson" → invoice marked paid (custom field matching works end-to-end)
 
 #### Invoice Allocation
 3. **Multi-invoice allocation** — Client with [$20, $30] invoices, $50 payment → both invoices marked paid
@@ -229,6 +236,15 @@ The Lambda handler must return one of these status values in all cases:
 - **Errors**: Throws `UnhandledScenarioError` when client/contact names are ambiguous (multiple exact matches)
 
 ## Recent Changes
+
+### Venmo Username Custom Field Matching (April 2026)
+Enhanced client matching with optional Venmo username custom field support:
+- New optional env var `VENMO_USERNAME_CONTACT_FIELD` to specify a custom contact field for Venmo username matching
+- Updated Pass 2 (contact matching) to prefer custom field over `first_name` + `last_name`
+- Falls back gracefully to name matching when custom field is configured but empty on contacts
+- Added 3 new unit tests + 1 integration test for custom field matching
+- Version bumped to 2.0.0 (constructor signature change to PaymentProcessingService)
+- All unit (33) and integration (13) tests passing
 
 ### Payment Allocation Algorithm Update (March 2026)
 Replaced greedy smallest-first allocation with **exact-match + oldest-first**:

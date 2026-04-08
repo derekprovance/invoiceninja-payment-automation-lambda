@@ -6,6 +6,7 @@ import {
   InvoiceAllocation,
   InvoiceNinjaClient,
   InvoiceNinjaInvoice,
+  ContactCustomField,
 } from '../interfaces/IInvoiceRepository'
 import { PaymentResult } from '../types/PaymentResult'
 
@@ -17,9 +18,11 @@ function normalizeName(name: string): string {
 
 export class PaymentProcessingService {
   private invoiceNinjaRepository: IInvoiceRepository
+  private venmoContactField: ContactCustomField | null
 
-  constructor(invoiceNinjaRepository: IInvoiceRepository) {
+  constructor(invoiceNinjaRepository: IInvoiceRepository, venmoContactField?: ContactCustomField | null) {
     this.invoiceNinjaRepository = invoiceNinjaRepository
+    this.venmoContactField = venmoContactField ?? null
   }
 
   public async processPayment(payment: IPayment, traceId: string): Promise<PaymentResult> {
@@ -134,12 +137,20 @@ export class PaymentProcessingService {
 
     // Invoice Ninja stores contacts in priority order, but we check all of them
     // to avoid missing a match when the primary contact is not the payer.
+    // If configured, prefer the Venmo username contact field (custom_value1-4); otherwise fall back to first_name + last_name.
     const contactMatches = candidatesWithContacts.filter((c) =>
-      c.contacts?.some(
-        (contact) =>
+      c.contacts?.some((contact) => {
+        if (this.venmoContactField) {
+          const venmoUsername = contact[this.venmoContactField]
+          if (venmoUsername) {
+            return normalizeName(venmoUsername) === normalizedSearch
+          }
+        }
+        return (
           normalizeName(`${contact.first_name} ${contact.last_name}`) ===
-          normalizedSearch,
-      ),
+          normalizedSearch
+        )
+      }),
     )
     if (contactMatches.length === 1) return contactMatches[0]
     if (contactMatches.length > 1) {

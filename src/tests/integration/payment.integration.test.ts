@@ -54,6 +54,25 @@ describe('Payment integration tests', () => {
     expect(result.status).toBe('success')
   })
 
+  it('venmo username custom field: matches via custom_value1 on contact', async () => {
+    const client = await testClient.createClient(
+      'Foundation Name',
+      'Elena',
+      'Richardson',
+      'erichardson_venmo', // custom_value1 (Venmo Username)
+    )
+    await testClient.createInvoice(client.id, 100)
+
+    const event = buildVenmoSesEvent('erichardson_venmo', 100)
+    const context = createMockContext()
+    const result = await handler(event, context)
+
+    expect(result.status).toBe('success')
+
+    const payments = await testClient.getPaymentsForClient(client.id)
+    expect(payments.length).toBeGreaterThan(0)
+  })
+
   it('multi-invoice allocation: two invoices fully paid by combined amount', async () => {
     const client = await testClient.createClient('Olivia Pierce', 'Olivia', 'Pierce')
     const inv1 = await testClient.createInvoice(client.id, 20)

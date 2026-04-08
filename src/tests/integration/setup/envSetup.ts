@@ -34,4 +34,5 @@ process.env.VENMO_EMAIL = 'venmo@venmo.com'
 // Type ID 1 (Credit Card) is always seeded in a fresh Invoice Ninja install.
 // Production uses 25 (Venmo), but any valid type ID works for integration testing.
 process.env.VENMO_PAYMENT_GATEWAY_ID = '1'
+process.env.VENMO_USERNAME_CONTACT_FIELD = 'custom_value1'
 process.env.LOG_LEVEL = 'silent'
