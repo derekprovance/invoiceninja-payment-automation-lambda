@@ -29,7 +29,12 @@ describe('config', () => {
     })
 
     it('accepts valid VENMO_USERNAME_CONTACT_FIELD values', () => {
-      const validFields = ['custom_value1', 'custom_value2', 'custom_value3', 'custom_value4']
+      const validFields = [
+        'custom_value1',
+        'custom_value2',
+        'custom_value3',
+        'custom_value4',
+      ]
 
       validFields.forEach((field) => {
         expect(() => {

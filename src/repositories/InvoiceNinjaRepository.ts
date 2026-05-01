@@ -104,7 +104,13 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
     return this.request(async () => {
       const response = await this.axiosInstance.post('/credits', {
         client_id: clientId,
-        line_items: [{ cost: amount, quantity: 1, notes: `Overpayment surplus (trace: ${traceId})` }],
+        line_items: [
+          {
+            cost: amount,
+            quantity: 1,
+            notes: `Overpayment surplus (trace: ${traceId})`,
+          },
+        ],
       })
       const credit = response.data.data as { id: string }
       await this.axiosInstance.put(`/credits/${credit.id}?mark_sent=true`, {})

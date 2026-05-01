@@ -24,10 +24,7 @@ vi.mock('../utils/config', () => ({
 
 describe('createPayment', () => {
   it('returns a valid IPayment for a Venmo email', () => {
-    const payment = createPayment(
-      'venmo@venmo.com',
-      'Alice Bob paid you $50.00',
-    )
+    const payment = createPayment('venmo@venmo.com', 'Alice Bob paid $50.00')
     expect(payment.getName()).toBe('Alice Bob')
     expect(payment.getAmount()).toBe(50)
     expect(payment.getPaymentId()).toBe('test-gateway-25')
@@ -35,7 +32,7 @@ describe('createPayment', () => {
 
   it('throws InvalidPaymentError for an unknown email', () => {
     expect(() =>
-      createPayment('unknown@example.com', 'Alice Bob paid you $50.00'),
+      createPayment('unknown@example.com', 'Alice Bob paid $50.00'),
     ).toThrow(InvalidPaymentError)
   })
 

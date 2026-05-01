@@ -37,8 +37,14 @@ export const handler = async (event: SESEvent, context: Context) => {
 
   try {
     const payment = handleEmailEvent(event)
-    const result = await paymentProcessingService.processPayment(payment, traceId)
-    logger.info({ traceId, status: result.status }, `Processing completed for ${payment.getName()}`)
+    const result = await paymentProcessingService.processPayment(
+      payment,
+      traceId,
+    )
+    logger.info(
+      { traceId, status: result.status },
+      `Processing completed for ${payment.getName()}`,
+    )
     return result
   } catch (error) {
     logger.error({ err: error, traceId }, 'Handler error')

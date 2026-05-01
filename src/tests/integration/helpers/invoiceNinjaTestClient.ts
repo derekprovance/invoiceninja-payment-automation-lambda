@@ -35,7 +35,10 @@ export class InvoiceNinjaTestClient {
     lastName: string,
     customValue1?: string,
   ): Promise<CreatedClient> {
-    const contact: InvoiceNinjaContact = { first_name: firstName, last_name: lastName }
+    const contact: InvoiceNinjaContact = {
+      first_name: firstName,
+      last_name: lastName,
+    }
     if (customValue1) {
       contact.custom_value1 = customValue1
     }

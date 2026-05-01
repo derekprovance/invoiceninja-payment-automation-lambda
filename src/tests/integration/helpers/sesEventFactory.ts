@@ -4,7 +4,7 @@ export function buildVenmoSesEvent(
   payerName: string,
   amount: number,
 ): SESEvent {
-  const subject = `${payerName} paid you $${amount.toFixed(2)}`
+  const subject = `${payerName} paid $${amount.toFixed(2)} to your Venmo account.`
   const from = 'Venmo <venmo@venmo.com>'
   const messageId = `test-${Date.now()}`
 

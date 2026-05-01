@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { handler } from '../../../index'
 import { InvoiceNinjaTestClient } from './helpers/invoiceNinjaTestClient'
-import { buildVenmoSesEvent, createMockContext } from './helpers/sesEventFactory'
+import {
+  buildVenmoSesEvent,
+  createMockContext,
+} from './helpers/sesEventFactory'
 import { INVOICE_STATUS_PAID } from '../../../src/interfaces/IInvoiceRepository'
 
 const BASE_URL = process.env.IN_BASE_URL!
@@ -74,7 +77,11 @@ describe('Payment integration tests', () => {
   })
 
   it('multi-invoice allocation: two invoices fully paid by combined amount', async () => {
-    const client = await testClient.createClient('Olivia Pierce', 'Olivia', 'Pierce')
+    const client = await testClient.createClient(
+      'Olivia Pierce',
+      'Olivia',
+      'Pierce',
+    )
     const inv1 = await testClient.createInvoice(client.id, 20)
     const inv2 = await testClient.createInvoice(client.id, 30)
 
@@ -109,7 +116,11 @@ describe('Payment integration tests', () => {
   })
 
   it('partial payment: invoice stays open', async () => {
-    const client = await testClient.createClient('Jack Oliveri', 'Jack', 'Oliveri')
+    const client = await testClient.createClient(
+      'Jack Oliveri',
+      'Jack',
+      'Oliveri',
+    )
     const inv = await testClient.createInvoice(client.id, 30)
 
     const event = buildVenmoSesEvent('Jack Oliveri', 20)
@@ -173,7 +184,11 @@ describe('Payment integration tests', () => {
   })
 
   it('float tolerance: imprecise allocation amounts accepted', async () => {
-    const client = await testClient.createClient('Sasha Sretensky', 'Sasha', 'Sretensky')
+    const client = await testClient.createClient(
+      'Sasha Sretensky',
+      'Sasha',
+      'Sretensky',
+    )
     const inv1 = await testClient.createInvoice(client.id, 10.1)
     const inv2 = await testClient.createInvoice(client.id, 20.2)
 
@@ -194,7 +209,11 @@ describe('Payment integration tests', () => {
   })
 
   it('paid invoice excluded: only unpaid invoice receives payment', async () => {
-    const client = await testClient.createClient('Richard Meyers', 'Richard', 'Meyers')
+    const client = await testClient.createClient(
+      'Richard Meyers',
+      'Richard',
+      'Meyers',
+    )
     const inv50 = await testClient.createInvoice(client.id, 50)
     const openInv = await testClient.createInvoice(client.id, 30)
 
@@ -214,7 +233,11 @@ describe('Payment integration tests', () => {
   })
 
   it('exact match: $7.55 payment pays the $7.55 invoice, not the older $10 invoice', async () => {
-    const client = await testClient.createClient('Elizabeth McNeil', 'Elizabeth', 'McNeil')
+    const client = await testClient.createClient(
+      'Elizabeth McNeil',
+      'Elizabeth',
+      'McNeil',
+    )
     const inv10 = await testClient.createInvoice(client.id, 10)
     const inv755 = await testClient.createInvoice(client.id, 7.55)
 
@@ -239,7 +262,11 @@ describe('Payment integration tests', () => {
   })
 
   it('oldest-first: larger but older invoice is paid before smaller newer one', async () => {
-    const client = await testClient.createClient('Theodore McNeil', 'Theodore', 'McNeil')
+    const client = await testClient.createClient(
+      'Theodore McNeil',
+      'Theodore',
+      'McNeil',
+    )
     const invLarge = await testClient.createInvoice(client.id, 30) // created first → oldest
     const invSmall = await testClient.createInvoice(client.id, 10) // created second → newest
 

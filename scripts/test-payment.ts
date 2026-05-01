@@ -1,9 +1,12 @@
 import { config } from 'dotenv'
-import { buildVenmoSesEvent, createMockContext } from '../src/tests/integration/helpers/sesEventFactory'
+import {
+  buildVenmoSesEvent,
+  createMockContext,
+} from '../src/tests/integration/helpers/sesEventFactory'
 
 // Must run before dynamic import of '../index', because config.ts calls
 // requireEnv() at module evaluation time.
-config();
+config()
 
 const main = async () => {
   const args = process.argv.slice(2)

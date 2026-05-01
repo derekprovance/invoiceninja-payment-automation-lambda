@@ -4,7 +4,7 @@ import { ParserError } from '../../utils/errors/ParserError'
 import { InvalidPaymentError } from '../../utils/errors/InvalidPaymentError'
 
 export class VenmoPayment implements IPayment {
-  private static readonly NAME_REGEX = /(\S.*\S) paid you/
+  private static readonly NAME_REGEX = /^(.+?)\s+paid\b/
   private static readonly MONEY_REGEX = /\$([0-9]+(?:\.[0-9]{1,2})?)/
 
   private name: string
@@ -51,7 +51,10 @@ export class VenmoPayment implements IPayment {
     if (reg) {
       return reg
     } else {
-      logger.error({ regex: regex.toString() }, 'Error parsing email subject')
+      logger.error(
+        { regex: regex.toString(), subject },
+        'Error parsing email subject',
+      )
       throw new ParserError(`Error parsing ${subject} with ${regex}`)
     }
   }

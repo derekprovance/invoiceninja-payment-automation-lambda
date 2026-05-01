@@ -20,32 +20,50 @@ export class PaymentProcessingService {
   private invoiceNinjaRepository: IInvoiceRepository
   private venmoContactField: ContactCustomField | null
 
-  constructor(invoiceNinjaRepository: IInvoiceRepository, venmoContactField?: ContactCustomField | null) {
+  constructor(
+    invoiceNinjaRepository: IInvoiceRepository,
+    venmoContactField?: ContactCustomField | null,
+  ) {
     this.invoiceNinjaRepository = invoiceNinjaRepository
     this.venmoContactField = venmoContactField ?? null
   }
 
-  public async processPayment(payment: IPayment, traceId: string): Promise<PaymentResult> {
+  public async processPayment(
+    payment: IPayment,
+    traceId: string,
+  ): Promise<PaymentResult> {
     logger.debug({ traceId }, `Processing payment for ${payment.getName()}`)
 
     const client = await this.getClient(payment.getName(), traceId)
 
     if (!client) {
-      logger.info({ traceId }, `No client was found for payment ${payment.getName()}`)
+      logger.info(
+        { traceId },
+        `No client was found for payment ${payment.getName()}`,
+      )
       return { status: 'no_client' }
     }
 
     const invoices = await this.invoiceNinjaRepository.listInvoices(client.id)
 
     if (invoices.length === 0) {
-      logger.info({ traceId }, `No invoices found for client ${payment.getName()}`)
+      logger.info(
+        { traceId },
+        `No invoices found for client ${payment.getName()}`,
+      )
       return { status: 'no_invoice' }
     }
 
     const allocations = this.allocatePayment(invoices, payment.getAmount())
 
     logger.info(
-      { traceId, clientId: client.id, amount: payment.getAmount(), invoiceIds: allocations.map((a) => a.invoice_id), typeId: payment.getPaymentId() },
+      {
+        traceId,
+        clientId: client.id,
+        amount: payment.getAmount(),
+        invoiceIds: allocations.map((a) => a.invoice_id),
+        typeId: payment.getPaymentId(),
+      },
       'Creating payment',
     )
     const data = await this.invoiceNinjaRepository.createPayment(
@@ -63,7 +81,11 @@ export class PaymentProcessingService {
         { traceId, clientId: client.id, amount: payment.getAmount(), surplus },
         'Payment exceeds invoices; creating credit',
       )
-      await this.invoiceNinjaRepository.createCredit(client.id, surplus, traceId)
+      await this.invoiceNinjaRepository.createCredit(
+        client.id,
+        surplus,
+        traceId,
+      )
     }
 
     return { status: 'success', data }

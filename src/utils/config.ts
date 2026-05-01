@@ -14,12 +14,16 @@ function requireEnv(name: string): string {
     throw new Error(`Missing required environment variable: ${name}`)
   }
   if (PLACEHOLDER_PATTERN.test(value)) {
-    throw new Error(`Environment variable ${name} still has placeholder value. Update .env with real values.`)
+    throw new Error(
+      `Environment variable ${name} still has placeholder value. Update .env with real values.`,
+    )
   }
   return value
 }
 
-function parseContactField(value: string | undefined): ContactCustomField | null {
+function parseContactField(
+  value: string | undefined,
+): ContactCustomField | null {
   if (!value) return null
   if (!VALID_CONTACT_FIELDS.has(value)) {
     throw new Error(
@@ -35,7 +39,9 @@ export const config = {
     venmo: {
       gatewayId: process.env.VENMO_PAYMENT_GATEWAY_ID ?? '25',
       email: process.env.VENMO_EMAIL ?? 'venmo@venmo.com',
-      usernameContactField: parseContactField(process.env.VENMO_USERNAME_CONTACT_FIELD),
+      usernameContactField: parseContactField(
+        process.env.VENMO_USERNAME_CONTACT_FIELD,
+      ),
     },
   },
   token: requireEnv('TOKEN'),

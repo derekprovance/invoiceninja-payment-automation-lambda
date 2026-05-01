@@ -2,10 +2,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 // Resolve integration env file relative to project root
-const envFile = resolve(
-  process.cwd(),
-  'docker/integration.env',
-)
+const envFile = resolve(process.cwd(), 'docker/integration.env')
 
 let raw: string
 try {

@@ -1,4 +1,8 @@
-export type ContactCustomField = 'custom_value1' | 'custom_value2' | 'custom_value3' | 'custom_value4'
+export type ContactCustomField =
+  | 'custom_value1'
+  | 'custom_value2'
+  | 'custom_value3'
+  | 'custom_value4'
 
 export interface InvoiceNinjaContact {
   first_name: string
@@ -40,7 +44,11 @@ export interface IInvoiceRepository {
   getClients(name: string): Promise<InvoiceNinjaClient[]>
   getClientById(id: string): Promise<InvoiceNinjaClient>
   listInvoices(clientId: string): Promise<InvoiceNinjaInvoice[]>
-  createCredit(clientId: string, amount: number, traceId: string): Promise<unknown>
+  createCredit(
+    clientId: string,
+    amount: number,
+    traceId: string,
+  ): Promise<unknown>
 }
 
 export const INVOICE_STATUS_PAID = '4'
