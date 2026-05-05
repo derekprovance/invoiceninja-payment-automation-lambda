@@ -1,6 +1,6 @@
 {
   "name": "invoiceninja-payment-automation",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "dist/index.js",
   "author": "Derek Provance",
   "license": "ISC",
