@@ -45,7 +45,7 @@ export class InvoiceNinjaRepository implements IInvoiceRepository {
         is_manual: false,
         type_id: typeId,
         invoices: allocations,
-        transaction_reference: `Lambda:${traceId}`,
+        transaction_reference: traceId,
       })
       return response.data
     }, 'Error creating payment')
